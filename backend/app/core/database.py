@@ -1,17 +1,19 @@
-"""Kết nối PostgreSQL bất đồng bộ (SQLAlchemy 2.0 + asyncpg)."""
+"""Kết nối SQLite bất đồng bộ (SQLAlchemy 2.0 + aiosqlite) cho app desktop."""
 
 from __future__ import annotations
 
 import logging
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
-from sqlalchemy import MetaData, text
+from sqlalchemy import MetaData, event, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import StaticPool
 
-from app.core.config import settings
+from app.core.config import Settings, settings
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +31,39 @@ class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
-engine: AsyncEngine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DB_ECHO,
-    pool_size=settings.DB_POOL_SIZE,
-    max_overflow=settings.DB_MAX_OVERFLOW,
-    pool_timeout=settings.DB_POOL_TIMEOUT_SECONDS,
-    pool_recycle=settings.DB_POOL_RECYCLE_SECONDS,
-    pool_pre_ping=True,
-)
+def _apply_sqlite_pragmas(dbapi_connection: Any, _connection_record: Any) -> None:
+    """SQLite mặc định TẮT khóa ngoại → phải bật để ON DELETE CASCADE hoạt động."""
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA journal_mode=WAL")  # cho phép đọc trong lúc worker đang ghi log
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+    finally:
+        cursor.close()
+
+
+def create_engine_for(app_settings: Settings) -> AsyncEngine:
+    if app_settings.is_in_memory_db:
+        # Mọi session phải dùng chung một kết nối, nếu không mỗi kết nối là một DB rỗng riêng
+        new_engine = create_async_engine(
+            app_settings.DATABASE_URL,
+            echo=app_settings.DB_ECHO,
+            poolclass=StaticPool,
+            connect_args={"check_same_thread": False},
+        )
+    else:
+        app_settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        new_engine = create_async_engine(
+            app_settings.DATABASE_URL,
+            echo=app_settings.DB_ECHO,
+            connect_args={"timeout": 30},
+        )
+    event.listen(new_engine.sync_engine, "connect", _apply_sqlite_pragmas)
+    return new_engine
+
+
+engine: AsyncEngine = create_engine_for(settings)
 
 AsyncSessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
     bind=engine,
@@ -70,7 +96,7 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 
 
 async def init_db() -> None:
-    """Tạo bảng nếu chưa có (môi trường dev). Production nên dùng Alembic migration."""
+    """Tạo bảng nếu chưa có. Khi schema đổi giữa các phiên bản sẽ dùng Alembic migration."""
     import app.models  # noqa: F401  # đăng ký toàn bộ model vào Base.metadata
 
     try:

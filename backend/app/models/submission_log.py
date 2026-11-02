@@ -5,8 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, BigInteger, Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -23,23 +22,23 @@ class EngineUsed(StrEnum):
 class SubmissionLog(Base):
     __tablename__ = "submission_logs"
     __table_args__ = (
-        CheckConstraint(
-            "engine_used IN ('HTTPX', 'PLAYWRIGHT')", name="engine_used_valid"
-        ),
+        CheckConstraint("engine_used IN ('HTTPX', 'PLAYWRIGHT')", name="engine_used_valid"),
         Index("ix_submission_logs_campaign_sequence", "campaign_id", "sequence_number"),
     )
 
-    # BigInteger + autoincrement trên PostgreSQL sinh ra BIGSERIAL
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # SQLite chỉ tự tăng với cột INTEGER PRIMARY KEY → BigInteger hạ xuống Integer trên SQLite
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
     campaign_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True
+        Uuid, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True
     )
     sequence_number: Mapped[int] = mapped_column(Integer, nullable=False)
     engine_used: Mapped[str] = mapped_column(String(30), nullable=False)
     status_code: Mapped[int] = mapped_column(Integer, nullable=False)
     is_success: Mapped[bool] = mapped_column(Boolean, nullable=False)
     # {"entry.123": ["Nam"], "pageHistory": "0,1", ...}
-    payload_sent: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    payload_sent: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
     executed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

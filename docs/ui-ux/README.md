@@ -1,6 +1,6 @@
 # Thiết kế UI/UX — Auto-Form (desktop)
 
-**Trạng thái:** CHỜ NGƯỜI DÙNG DUYỆT (2026-11-02). Chưa được viết frontend cho tới khi duyệt (quy tắc 1 trong `CLAUDE.md`).
+**Trạng thái:** ĐÃ DUYỆT (2026-11-02). Frontend (Phase 4) phải bám sát bản này; thay đổi giao diện đáng kể cần thiết kế lại và xin duyệt trước khi code.
 
 **Bản thiết kế (canvas):** https://claude.ai/artifact/HBfvuS7c5uqH4ChJzsnKjm — riêng tư, chỉ chủ sở hữu mở được cho tới khi chia sẻ.
 
@@ -17,7 +17,7 @@
 | — | `Sidebar.dc.html` | Thanh điều hướng dùng chung | `components/layout/Sidebar.tsx` |
 
 ## Quyết định thiết kế
-- **Không có màn hình đăng nhập**: app desktop, mỗi máy một người dùng (SPEC-008). Bảng `users`/JWT của spec sẽ được rút gọn ở Phase 3 — cần người dùng xác nhận.
+- **Không có màn hình đăng nhập** (người dùng xác nhận — SPEC-011): app desktop, mỗi máy một người dùng.
 - **Nhãn thân thiện thay thuật ngữ kỹ thuật**: "Tốc độ tối đa" (BURST), "Rải đều tự nhiên" (SCHEDULED), "Dùng trình duyệt khi bị chặn" (Playwright fallback), "Gửi trực tiếp" (HTTPX).
 - **Chặn chạy khi cấu hình chưa đủ**: nút "Bắt đầu chạy" bị khóa kèm lý do (VD: 7 câu tự luận thiếu mẫu) — tránh lỗi `GeneratorConfigError` lúc chạy.
 - **Hiển thị đường đi rẽ nhánh** dự kiến (Workspace) và thực tế (Campaign) — rút ra từ lỗi CONF-001.

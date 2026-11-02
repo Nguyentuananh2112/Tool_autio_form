@@ -3,8 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, ForeignKey, Integer, String, UniqueConstraint, Uuid, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -17,17 +16,17 @@ class QuestionRule(Base):
     __tablename__ = "question_rules"
     __table_args__ = (UniqueConstraint("campaign_id", "entry_id", name="uq_question_rules_campaign_entry"),)
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     campaign_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True
+        Uuid, ForeignKey("campaigns.id", ondelete="CASCADE"), nullable=False, index=True
     )
     # Chỉ phần số của entry.<id>, VD "123456789"
     entry_id: Mapped[str] = mapped_column(String(50), nullable=False)
     question_type: Mapped[int] = mapped_column(Integer, nullable=False)
     # QuestionRuleConfig.model_dump(mode="json")
-    config_json: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    config_json: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     cached_ai_pool: Mapped[list[str]] = mapped_column(
-        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+        JSON, nullable=False, default=list, server_default=text("'[]'")
     )
 
     campaign: Mapped[Campaign] = relationship(back_populates="question_rules")

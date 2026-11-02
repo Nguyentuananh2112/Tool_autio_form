@@ -22,5 +22,14 @@
 - PyInstaller backend (~80–150MB) + Chromium (~150MB+) làm bộ cài và mỗi lần cập nhật rất nặng.
 - **Giảm thiểu:** không đóng gói Chromium vào bộ cài; tải Chromium lần đầu khi user bật Playwright Fallback; cập nhật khác biệt (differential) nếu framework hỗ trợ.
 
-### [RISK-007] Models đang dùng kiểu riêng của PostgreSQL (`JSONB`, `UUID`) — OPEN
-- App desktop dùng SQLite → phải đổi sang kiểu trung lập (`JSON`, `Uuid` của SQLAlchemy 2.0) và bỏ `::jsonb` trong `server_default`. Làm trước Phase 2.
+### [RISK-007] Models đang dùng kiểu riêng của PostgreSQL (`JSONB`, `UUID`) — FIXED 2026-11-02
+- Đã đổi sang `JSON`, `Uuid` của SQLAlchemy 2.0; `server_default` dùng `'[]'` và `true()`; bỏ bảng `users` (SPEC-011). Test `tests/test_database.py` kiểm tra giá trị mặc định, JSON và xóa dây chuyền.
+- **Bẫy SQLite cần nhớ:**
+  - Khóa ngoại mặc định TẮT → phải `PRAGMA foreign_keys=ON` ở mỗi kết nối (`_apply_sqlite_pragmas` trong `core/database.py`), nếu không `ON DELETE CASCADE` âm thầm không chạy.
+  - Chỉ cột `INTEGER PRIMARY KEY` mới tự tăng → `BigInteger().with_variant(Integer, "sqlite")` cho `submission_logs.id`.
+  - DB `:memory:` cần `StaticPool`, nếu không mỗi kết nối là một DB rỗng riêng.
+  - Biến môi trường `DATA_DIR=` rỗng bị Pydantic hiểu thành thư mục hiện tại → không để rỗng trong `.env`.
+
+### [RISK-008] Thay đổi schema giữa các phiên bản phát hành — OPEN
+- 40–50 máy đã có file DB cũ; bản cập nhật đổi cột/bảng mà chỉ dùng `create_all` sẽ không thêm cột mới → lỗi khi chạy.
+- **Giảm thiểu:** thêm Alembic (hỗ trợ batch mode cho SQLite) trước bản phát hành đầu tiên; app tự chạy migration khi khởi động; sao lưu file DB trước khi migrate.

@@ -29,12 +29,18 @@
 ### [SPEC-008] Mô hình triển khai: ỨNG DỤNG DESKTOP — 2026-11-02 — CHỐT
 - Người dùng chọn: mỗi user cài app trên máy mình; app kiểm tra GitHub Release, báo "Có bản mới" và nút "Cập nhật".
 - **Lệch spec có chủ đích:** PostgreSQL + Redis → SQLite nhúng (async qua `aiosqlite`) + trạng thái chiến dịch trong bộ nhớ của tiến trình backend. Backend FastAPI chạy local `127.0.0.1` như một tiến trình con (sidecar) đóng gói bằng PyInstaller; frontend React giữ nguyên.
-- Còn phải chốt khi thiết kế: khung desktop (Electron + electron-updater hay Tauri + updater plugin), có giữ đăng nhập tài khoản không (app một người dùng/máy), nơi lưu Gemini API key (bộ nhớ an toàn của hệ điều hành).
+- Còn phải chốt: khung desktop (Electron + electron-updater hay Tauri + updater plugin). Đăng nhập: đã bỏ (SPEC-011). Gemini key: kho bảo mật Windows (SPEC-011).
 - Ưu điểm đã cân nhắc: mỗi máy gửi form từ IP riêng, không tốn VPS.
 
-### [SPEC-010] Bản thiết kế UI/UX v1 — 2026-11-02 — CHỜ DUYỆT
+### [SPEC-010] Bản thiết kế UI/UX v1 — 2026-11-02 — ĐÃ DUYỆT
 - 8 artboard (6 màn hình + hộp thoại SPSS + sidebar + hệ thống thiết kế). Chi tiết & cây component: `docs/ui-ux/README.md`.
-- Giả định cần xác nhận: bỏ màn hình đăng nhập (app một người dùng/máy); không có màn hình riêng cho Excel (mới là tab, sẽ thiết kế khi làm Phase 2).
+- Người dùng duyệt ngày 2026-11-02. Màn hình riêng cho tab Excel/CSV chưa có — thiết kế bổ sung khi làm `excel_mapper` (Phase 2) và xin duyệt riêng.
+
+### [SPEC-011] Bỏ đăng nhập & tài khoản — 2026-11-02 — CHỐT
+- Người dùng xác nhận: app một người dùng/máy, **không có màn hình đăng nhập**.
+- Lệch spec: bỏ bảng `users`, cột `user_id` ở `forms`/`campaigns`, `auth_router`, `security.py` (JWT/bcrypt), `AuthPage.tsx`, các endpoint `/api/v1/auth/*`.
+- Gemini API key chuyển từ cột `users.gemini_api_key` sang kho bảo mật của Windows (thư viện `keyring`), cấu hình ở màn hình Cài đặt.
+- Backend chỉ nghe trên `127.0.0.1` nên không cần xác thực tài khoản; sẽ dùng token ngẫu nhiên mỗi lần khởi động giữa app desktop và backend để chặn trang web lạ gọi vào cổng local (thiết kế ở Phase 3).
 
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

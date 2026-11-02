@@ -1,7 +1,12 @@
-"""Cấu hình ứng dụng, đọc từ biến môi trường / file `.env` bằng Pydantic Settings."""
+"""Cấu hình ứng dụng desktop, đọc từ biến môi trường / file `.env` bằng Pydantic Settings.
+
+App chạy trên máy người dùng (dev-notes SPEC-008, SPEC-011): dữ liệu nằm trong SQLite ở
+thư mục dữ liệu của người dùng, không có tài khoản đăng nhập.
+"""
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -10,6 +15,14 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BACKEND_DIR: Path = Path(__file__).resolve().parents[2]
+APP_DIR_NAME = "Auto-Form"
+
+
+def default_data_dir() -> Path:
+    """%APPDATA%\\Auto-Form trên Windows, ~/.local/share/Auto-Form trên hệ khác."""
+    appdata = os.environ.get("APPDATA")
+    base = Path(appdata) if appdata else Path.home() / ".local" / "share"
+    return base / APP_DIR_NAME
 
 
 class Settings(BaseSettings):
@@ -21,33 +34,24 @@ class Settings(BaseSettings):
     )
 
     # ------------------------------------------------------------------ App
-    APP_NAME: str = "Smart Survey Auto-Filler"
-    ENVIRONMENT: Literal["development", "staging", "production"] = "development"
+    APP_NAME: str = "Auto-Form"
+    APP_VERSION: str = "0.1.0"
+    ENVIRONMENT: Literal["development", "production"] = "development"
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
-    # Danh sách origin cách nhau bởi dấu phẩy, VD: "http://localhost:5173,https://app.example.com"
+    # Chỉ nghe trên loopback: backend là tiến trình con của app desktop
+    HOST: str = "127.0.0.1"
+    PORT: int = Field(default=8765, ge=1024, le=65535)
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
 
-    # ------------------------------------------------------------- Database
-    DATABASE_URL: str = Field(
-        ...,
-        description="VD: postgresql+asyncpg://user:pass@localhost:5432/auto_form",
-    )
+    # ------------------------------------------------------------- Storage
+    DATA_DIR: Path = Field(default_factory=default_data_dir)
+    # Để trống = <DATA_DIR>/auto_form.db
+    DATABASE_URL: str = ""
     DB_ECHO: bool = False
-    DB_POOL_SIZE: int = Field(default=10, ge=1, le=200)
-    DB_MAX_OVERFLOW: int = Field(default=20, ge=0, le=500)
-    DB_POOL_TIMEOUT_SECONDS: int = Field(default=30, ge=1)
-    DB_POOL_RECYCLE_SECONDS: int = Field(default=1800, ge=60)
-
-    # ---------------------------------------------------------------- Redis
-    REDIS_URL: str = "redis://localhost:6379/0"
-
-    # ------------------------------------------------------------- Security
-    JWT_SECRET_KEY: str = Field(..., min_length=32)
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=60 * 24, ge=5)
 
     # --------------------------------------------------------------- Gemini
+    # Key thật được lưu trong kho bảo mật của Windows; biến này chỉ dùng khi phát triển
     GEMINI_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
@@ -62,17 +66,12 @@ class Settings(BaseSettings):
     SPSS_PREVIEW_SAMPLE_SIZE: int = Field(default=200, ge=20, le=5000)
     MAX_CAMPAIGN_TARGET: int = Field(default=10000, ge=1)
 
-    @field_validator("DATABASE_URL")
+    @field_validator("HOST")
     @classmethod
-    def _normalize_database_url(cls, value: str) -> str:
-        url = value.strip()
-        if url.startswith("postgres://"):
-            url = "postgresql+asyncpg://" + url[len("postgres://"):]
-        elif url.startswith("postgresql://"):
-            url = "postgresql+asyncpg://" + url[len("postgresql://"):]
-        if not url.startswith("postgresql+asyncpg://"):
-            raise ValueError("DATABASE_URL phải dùng driver async: postgresql+asyncpg://...")
-        return url
+    def _loopback_only(cls, value: str) -> str:
+        if value not in ("127.0.0.1", "localhost", "::1"):
+            raise ValueError("Backend desktop chỉ được nghe trên địa chỉ loopback.")
+        return value
 
     @field_validator("API_V1_PREFIX")
     @classmethod
@@ -81,9 +80,15 @@ class Settings(BaseSettings):
         return prefix if prefix != "/" else ""
 
     @model_validator(mode="after")
-    def _check_production_safety(self) -> Settings:
-        if self.ENVIRONMENT == "production" and self.DEBUG:
-            raise ValueError("Không được bật DEBUG trong môi trường production.")
+    def _resolve_database_url(self) -> Settings:
+        url = self.DATABASE_URL.strip()
+        if not url:
+            url = f"sqlite+aiosqlite:///{(self.DATA_DIR / 'auto_form.db').as_posix()}"
+        elif url.startswith("sqlite://"):
+            url = "sqlite+aiosqlite://" + url[len("sqlite://"):]
+        if not url.startswith("sqlite+aiosqlite://"):
+            raise ValueError("DATABASE_URL phải là SQLite async: sqlite+aiosqlite:///đường/dẫn.db")
+        self.DATABASE_URL = url
         return self
 
     @property
@@ -94,10 +99,14 @@ class Settings(BaseSettings):
     def is_production(self) -> bool:
         return self.ENVIRONMENT == "production"
 
+    @property
+    def is_in_memory_db(self) -> bool:
+        return ":memory:" in self.DATABASE_URL
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()  # type: ignore[call-arg]  # các trường bắt buộc được nạp từ môi trường
+    return Settings()
 
 
 settings: Settings = get_settings()

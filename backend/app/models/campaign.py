@@ -5,8 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, func, text
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Uuid, func, text, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -15,7 +14,6 @@ if TYPE_CHECKING:
     from app.models.form import Form
     from app.models.question_rule import QuestionRule
     from app.models.submission_log import SubmissionLog
-    from app.models.user import User
 
 
 class DataSource(StrEnum):
@@ -44,12 +42,9 @@ class Campaign(Base):
         CheckConstraint("completed_count >= 0 AND failed_count >= 0", name="counts_non_negative"),
     )
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     form_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("forms.id", ondelete="CASCADE"), nullable=False, index=True
+        Uuid, ForeignKey("forms.id", ondelete="CASCADE"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     data_source: Mapped[str] = mapped_column(
@@ -63,23 +58,22 @@ class Campaign(Base):
     completed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     failed_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     # {"mode": "BURST" | "SCHEDULED", "duration_minutes": 120, "concurrency": 20}
-    schedule_config: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    schedule_config: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # [{"group_id", "name", "mean", "std", "r", "alpha_target", "entries", "reversed_entries", ...}]
     spss_groups: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+        JSON, nullable=False, default=list, server_default=text("'[]'")
     )
-    excel_data: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
+    excel_data: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     proxy_list: Mapped[list[str]] = mapped_column(
-        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+        JSON, nullable=False, default=list, server_default=text("'[]'")
     )
     use_playwright_fallback: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True, server_default=text("true")
+        Boolean, nullable=False, default=True, server_default=true()
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    user: Mapped[User] = relationship(back_populates="campaigns")
     form: Mapped[Form] = relationship(back_populates="campaigns")
     question_rules: Mapped[list[QuestionRule]] = relationship(
         back_populates="campaign", cascade="all, delete-orphan", passive_deletes=True
