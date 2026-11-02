@@ -7,6 +7,7 @@ Checkbox → các biến 0/1).
 from __future__ import annotations
 
 import io
+from datetime import UTC, datetime
 from collections.abc import Sequence
 from typing import Any
 
@@ -52,10 +53,17 @@ def _unique_titles(structure: ParsedFormStructure) -> dict[str, str]:
     return names
 
 
+def _local_time(value: datetime | None) -> str | None:
+    if value is None:
+        return None
+    aware = value.replace(tzinfo=UTC) if value.tzinfo is None else value
+    return aware.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
+
 def _meta(log: SubmissionLog, payload: dict[str, Any]) -> dict[str, Any]:
     return {
         "STT": log.sequence_number,
-        "Thời điểm gửi": log.executed_at.isoformat() if log.executed_at else None,
+        "Thời điểm gửi": _local_time(log.executed_at),
         "Thành công": "Có" if log.is_success else "Không",
         "Công cụ": log.engine_used,
         "Mã HTTP": log.status_code,

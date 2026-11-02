@@ -82,5 +82,16 @@
 - UI (Phase 4): nút "Thử với form mẫu" ở Tổng quan và cuối tour; nhãn "Chế độ tập dùng" luôn hiện khi đang ở form mẫu.
 - Việc kiểm chứng gửi thật (RISK-009/010) vẫn cần một form thử riêng của người dùng — để sau.
 
+### [SPEC-018] Phase 4: Frontend React — 2026-11-02
+- Vite 6 + React 18.3 + TypeScript strict + Tailwind 4 + Zustand 5 + Recharts 2 + lucide-react + axios; 117 file, lớn nhất 141 dòng.
+- **Lệch spec:** không dùng thư viện Shadcn/UI; tự viết các component cơ bản (`components/ui/*`) theo đúng token của artboard 7 để không phụ thuộc Radix và giữ bundle nhỏ. Có thể chuyển sang shadcn sau nếu cần.
+- `HashRouter` (app desktop nạp giao diện từ file). Địa chỉ backend & `X-App-Token` lấy từ `window.__AUTOFORM_CONFIG__` do vỏ desktop gắn (Phase 5); khi dev dùng proxy của Vite.
+- Bản nháp cấu hình từng form lưu `localStorage`; KHÔNG lưu dữ liệu Excel (vượt ~5 MB) → mở lại app cần chọn lại file.
+- Tour (`components/tour/*`) chạy trên form mẫu + một "Chiến dịch tập dùng (mô phỏng)" thật → người mới thấy tiến độ trực tiếp mà không gửi gì ra ngoài.
+- Màu biểu đồ đã kiểm bằng `dataviz/validate_palette.js`: sáng `#2563EB`/`#0E9384`, tối `#4F7FEA`/`#22A08E` (đạt mọi kiểm tra, kể cả mù màu). Biểu đồ có chú thích + chế độ xem bảng.
+- Backend bổ sung cho giao diện: `GET /campaigns/{id}/distribution`, `page_history` trong nhật ký.
+- Nút cập nhật & "Mở thư mục" chỉ hoạt động khi có cầu nối desktop (`window.autoformDesktop`, Phase 5); khi chạy dev, Cài đặt ghi rõ điều đó.
+- Đã chạy app thật bằng Playwright, chụp 30+ màn hình (tour 14 bước, sáng/tối, SPSS, gửi thử, chiến dịch) → tìm và sửa BUG-005, BUG-006 và 4 lỗi giao diện nhỏ (màu link, nhãn bộ lọc SPSS, câu 2 lựa chọn lọt vào danh sách thang đo, biểu đồ chậm cập nhật).
+
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

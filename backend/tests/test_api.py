@@ -148,3 +148,33 @@ async def test_excel_flow_and_trial_submit(client: httpx.AsyncClient, http: Fake
 
     trial = (await client.post(f"{API}/campaigns/trial-submit", json={"form_id": form_id, "rules": rules_for_sample_form()})).json()
     assert trial["success"] is True and trial["payload_sent"]["fvv"] == "1"
+
+
+async def test_distribution_and_log_paths(client: httpx.AsyncClient) -> None:
+    form_id = await _create_form(client)
+    campaign = await _create_campaign(client, form_id)
+    await client.post(f"{API}/campaigns/{campaign['id']}/start")
+    await wait_for_status(client, campaign["id"], "COMPLETED")
+    logs = (await client.get(f"{API}/campaigns/{campaign['id']}/logs")).json()
+    assert all(log["page_history"].startswith("0") for log in logs)
+    dist = {d["entry_id"]: d for d in (await client.get(f"{API}/campaigns/{campaign['id']}/distribution")).json()}
+    gender = dist["1001"]
+    assert gender["answered"] == 5 and sum(o["sent_count"] for o in gender["options"]) == 5
+    assert [o["target_pct"] for o in gender["options"]] == [50.0, 50.0, 0.0]
+
+
+async def test_datetimes_are_utc_aware(client: httpx.AsyncClient) -> None:
+    form_id = await _create_form(client)
+    created = (await client.get(f"{API}/forms/{form_id}")).json()["created_at"]
+    assert created.endswith("Z") or created.endswith("+00:00")
+
+
+async def test_preview_spss_ignores_unrelated_missing_questions(client: httpx.AsyncClient) -> None:
+    form_id = await _create_form(client)
+    body = {
+        "form_id": form_id,
+        "rules": [{"entry_id": "1001", "question_type": 2, "weights": {"Nam": 50, "__other_option__": 50}}],
+        "spss_groups": [{"group_id": "g", "name": "HL", "mean": 4, "std": 0.7, "r": 0.5, "entries": ["1003", "1004"]}],
+    }
+    response = await client.post(f"{API}/campaigns/preview-spss", json=body)
+    assert response.status_code == 200 and response.json()["groups"][0]["n_items"] == 2

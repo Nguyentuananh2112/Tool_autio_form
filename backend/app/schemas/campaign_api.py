@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models import DataSource
 from app.schemas.campaign_schema import QuestionRuleConfig, ScheduleConfig, SpssGroupConfig, SpssGroupPreview
+from app.schemas.common import UtcDateTime
 from app.schemas.excel_schema import ConversionReport
 
 MAX_TARGET = 10_000
@@ -52,7 +52,7 @@ class CampaignRead(BaseModel):
     schedule: ScheduleConfig
     proxy: str | None
     use_playwright_fallback: bool
-    created_at: datetime
+    created_at: UtcDateTime
     is_active: bool = False
     pause_reason: str | None = None
 
@@ -97,7 +97,8 @@ class SubmissionLogRead(BaseModel):
     status_code: int
     is_success: bool
     error_detail: str | None
-    executed_at: datetime
+    executed_at: UtcDateTime
+    page_history: str | None = None
 
 
 class ExcelConvertResponse(BaseModel):

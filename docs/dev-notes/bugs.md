@@ -21,3 +21,15 @@
 - **Nguyên nhân gốc:** `session.get(Campaign, id, options=[selectinload(form)])` trả lại object CÓ SẴN trong session (vừa `add`), bỏ qua `selectinload` → truy cập `campaign.form` kích hoạt lazy-load ngoài ngữ cảnh async.
 - **Cách xử lý:** thêm `populate_existing=True` trong `campaign_service.get_campaign`.
 - **Bài học:** Với SQLAlchemy async, mọi quan hệ dùng sau khi trả về phải được nạp rõ ràng; object vừa tạo trong cùng session cần `populate_existing`.
+
+### [BUG-005] Giờ trong nhật ký lệch 7 tiếng — 2026-11-02 — FIXED (phát hiện qua ảnh chụp màn hình thật)
+- **Hiện tượng:** Nhật ký hiện 16:32 (lấy từ DB) xen với 23:32 (từ WebSocket); biểu đồ nhịp gửi chia sai khung giờ.
+- **Nguyên nhân gốc:** SQLite lưu `now()` dạng UTC KHÔNG kèm múi giờ → API trả "2026-11-02T16:32:23" → trình duyệt hiểu là giờ địa phương.
+- **Cách xử lý:** kiểu `UtcDateTime` (`schemas/common.py`) gắn UTC cho mọi thời điểm trong DTO; file xuất Excel đổi sang giờ máy (backend chạy ngay trên máy người dùng). Test `test_datetimes_are_utc_aware`.
+- **Bài học:** Mọi datetime trả ra API phải có múi giờ. Chỉ test logic là không đủ — phải chạy app thật và nhìn.
+
+### [BUG-006] "Kiểm tra thử Alpha" bị chặn bởi câu không liên quan — 2026-11-02 — FIXED
+- **Hiện tượng:** Chạy thử nhóm SPSS báo lỗi vì một câu tự luận khác chưa có câu mẫu.
+- **Nguyên nhân gốc:** endpoint preview gọi `validate()` toàn form.
+- **Cách xử lý:** `preview_spss_groups` chỉ lập kế hoạch & kiểm tra các nhóm (`_plan_groups`). Test `test_preview_spss_ignores_unrelated_missing_questions`.
+- **Bài học:** Kiểm tra theo đúng phạm vi thao tác người dùng đang làm.

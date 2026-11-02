@@ -22,7 +22,7 @@ def _item_previews(plan: GroupPlan, aligned: np.ndarray) -> list[SpssItemPreview
         count_map = dict(zip(values.tolist(), counts.tolist()))
         items.append(SpssItemPreview(
             entry_id=question.entry_id,
-            title=question.title,
+            title=question.row_label or question.title,  # hàng lưới: tên hàng ngắn gọn hơn
             is_reversed=is_reversed,
             mean=round(float(observed[:, j].mean()), 4),
             std=round(float(observed[:, j].std(ddof=1)), 4),

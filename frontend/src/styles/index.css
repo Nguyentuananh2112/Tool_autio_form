@@ -1,0 +1,119 @@
+@import 'tailwindcss';
+
+/* Token màu theo artboard 7 (Hệ thống thiết kế). Chế độ tối: class "dark" trên <html>. */
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --sunken: #eef0f3;
+  --ink: #111827;
+  --muted: #4b5563;
+  --border: #e2e5ea;
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-soft: #e8eefc;
+  --accent-line: #c9d7f8;
+  --accent-ink: #ffffff;
+  --warn: #9a4a07;
+  --warn-soft: #fdf1e3;
+  --ok: #15703a;
+  --ok-soft: #e6f4ea;
+  --bad: #b91c1c;
+  --bad-soft: #fbeaea;
+  --code: #0f1420;
+  --code-ink: #d7deea;
+  --code-muted: #8f9aad;
+  --dim: rgb(17 24 39 / 0.55);
+  /* Màu chuỗi biểu đồ — đã kiểm bằng dataviz validate_palette (sáng & tối) */
+  --series-1: #2563eb;
+  --series-2: #0e9384;
+  --grid: #e2e5ea;
+  color-scheme: light;
+}
+
+:root.dark {
+  --bg: #0e1014;
+  --surface: #161a21;
+  --sunken: #1d222b;
+  --ink: #e8eaee;
+  --muted: #a7aebb;
+  --border: #2a303b;
+  --accent: #7aa2ff;
+  --accent-hover: #9bb9ff;
+  --accent-soft: #1a2440;
+  --accent-line: #2c3d6b;
+  --accent-ink: #0e1014;
+  --warn: #f5a453;
+  --warn-soft: #33261a;
+  --ok: #5bd08a;
+  --ok-soft: #16301f;
+  --bad: #f27a7a;
+  --bad-soft: #381c1c;
+  --code: #0a0c10;
+  --dim: rgb(0 0 0 / 0.65);
+  --series-1: #4f7fea;
+  --series-2: #22a08e;
+  --grid: #2a303b;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+  --color-accent-ink: var(--accent-ink);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-code: var(--code);
+  --color-code-ink: var(--code-ink);
+  --color-code-muted: var(--code-muted);
+  --font-sans: 'Be Vietnam Pro', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+input[type='range'],
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--accent);
+}
+
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

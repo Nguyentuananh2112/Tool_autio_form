@@ -40,14 +40,7 @@ class SurveyDataGenerator:
         self._plans: list[GroupPlan] | None = None
         self.warnings: list[str] = []
 
-    def validate(self) -> list[str]:
-        """Kiểm tra cấu hình, hiệu chỉnh các nhóm SPSS. Raise GeneratorConfigError nếu có lỗi."""
-        errors: list[str] = []
-        warnings = [
-            f"Luật cho entry {entry_id} không khớp câu hỏi nào trong form, sẽ bị bỏ qua."
-            for entry_id in self._rules
-            if entry_id not in self._questions
-        ]
+    def _plan_groups(self, errors: list[str]) -> tuple[list[GroupPlan], dict[str, str]]:
         grouped: dict[str, str] = {}
         plans: list[GroupPlan] = []
         group_ids: set[str] = set()
@@ -59,6 +52,17 @@ class SurveyDataGenerator:
             plan = plan_group(group, self._questions, grouped, errors)
             if plan is not None:
                 plans.append(plan)
+        return plans, grouped
+
+    def validate(self) -> list[str]:
+        """Kiểm tra cấu hình, hiệu chỉnh các nhóm SPSS. Raise GeneratorConfigError nếu có lỗi."""
+        errors: list[str] = []
+        warnings = [
+            f"Luật cho entry {entry_id} không khớp câu hỏi nào trong form, sẽ bị bỏ qua."
+            for entry_id in self._rules
+            if entry_id not in self._questions
+        ]
+        plans, grouped = self._plan_groups(errors)
 
         for question in self.structure.questions:
             if question.entry_id not in grouped:
@@ -105,8 +109,13 @@ class SurveyDataGenerator:
         """Chạy thử n mẫu trong RAM (RNG riêng, không ảnh hưởng dữ liệu sinh thật)."""
         if n < 3:
             raise ValueError("Cần ít nhất 3 mẫu để tính thống kê")
+        # Chỉ kiểm tra các nhóm: câu khác chưa cấu hình xong không được chặn việc chạy thử nhóm
+        errors: list[str] = []
+        plans, _ = self._plan_groups(errors)
+        if errors:
+            raise GeneratorConfigError(errors)
         rng = np.random.default_rng(self._seed)
-        return [build_group_preview(plan, n, rng) for plan in self._ensure_plans()]
+        return [build_group_preview(plan, n, rng) for plan in plans]
 
 
 def generate_responses(

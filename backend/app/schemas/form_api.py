@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.common import UtcDateTime
 from app.schemas.form_schema import ParsedFormStructure
 
 
@@ -24,7 +24,7 @@ class FormSummary(BaseModel):
     total_pages: int
     question_count: int
     is_demo: bool = False
-    created_at: datetime
+    created_at: UtcDateTime
 
 
 class FormDetail(FormSummary):

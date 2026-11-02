@@ -11,9 +11,12 @@ from sqlalchemy import select
 
 from app.api.deps import DbSession, RunnerKwargs
 from app.api.errors import ConflictError
-from app.models import CampaignStatus, SubmissionLog
+from sqlalchemy.orm import selectinload
+
+from app.models import Campaign, CampaignStatus, SubmissionLog
 from app.schemas.campaign_api import CampaignRead, SubmissionLogRead, TrialSubmitRequest, TrialSubmitResponse
 from app.services import campaign_service, export_service
+from app.services.distribution_service import QuestionDistribution, build_distributions
 from app.services.spss_generator import SurveyDataGenerator, build_payload_tuples
 from app.workers.campaign_control import registry
 from app.workers.campaign_runner import default_http_factory, start_campaign
@@ -85,13 +88,30 @@ async def logs(
     session: DbSession,
     limit: int = Query(default=100, ge=1, le=1000),
     before_id: int | None = Query(default=None, ge=1),
-) -> list[SubmissionLog]:
+) -> list[SubmissionLogRead]:
     await campaign_service.get_campaign(session, campaign_id)
     query = select(SubmissionLog).where(SubmissionLog.campaign_id == campaign_id)
     if before_id is not None:
         query = query.where(SubmissionLog.id < before_id)
     result = await session.execute(query.order_by(SubmissionLog.id.desc()).limit(limit))
-    return list(result.scalars().all())
+    return [
+        SubmissionLogRead.model_validate(log).model_copy(update={"page_history": log.payload_sent.get("pageHistory")})
+        for log in result.scalars().all()
+    ]
+
+
+@router.get("/{campaign_id}/distribution", response_model=list[QuestionDistribution])
+async def distribution(campaign_id: uuid.UUID, session: DbSession) -> list[QuestionDistribution]:
+    campaign = await session.get(
+        Campaign, campaign_id, options=[selectinload(Campaign.form), selectinload(Campaign.question_rules)],
+        populate_existing=True,
+    )
+    if campaign is None:
+        raise campaign_service.NotFoundError("Không tìm thấy chiến dịch.")
+    result = await session.execute(select(SubmissionLog).where(SubmissionLog.campaign_id == campaign_id))
+    logs = list(result.scalars().all())
+    structure = campaign_service.structure_of(campaign.form)
+    return await asyncio.to_thread(build_distributions, structure, list(campaign.question_rules), logs)
 
 
 @router.get("/{campaign_id}/export")

@@ -33,8 +33,7 @@ async def preview_spss(payload: SpssPreviewRequest, session: DbSession) -> SpssP
 
     def run() -> SpssPreviewResponse:
         generator = SurveyDataGenerator(structure, payload.rules, payload.spss_groups)
-        warnings = generator.validate()
-        return SpssPreviewResponse(groups=generator.preview_spss_groups(payload.sample_size), warnings=warnings)
+        return SpssPreviewResponse(groups=generator.preview_spss_groups(payload.sample_size), warnings=[])
 
     return await asyncio.to_thread(run)
 

@@ -17,6 +17,7 @@ Trao đổi với người dùng bằng **tiếng Việt**. Tên code, thuật n
 ## Quy ước kỹ thuật
 - Backend: Python 3.12, môi trường ảo `backend/.venv` (`backend\.venv\Scripts\python.exe`).
 - DB: SQLite (`aiosqlite`) tại `%APPDATA%\Auto-Form\auto_form.db`; test dùng file SQLite tạm (KHÔNG dùng `:memory:` — dev-notes BUG-002). Không có tài khoản/đăng nhập (SPEC-011).
+- Frontend: `frontend/` (Vite + React + TS + Tailwind 4). Dev: `python -m app` trong backend + `npx vite` trong frontend, mở `http://localhost:5173`. Kiểm tra: `npx tsc --noEmit -p .`, `npx vitest run`.
 - Async-first cho mọi I/O; Pydantic v2; SQLAlchemy 2.0 async; không viết code giả (placeholder).
 - Module thuần CPU (`spss_generator`) gọi qua `asyncio.to_thread` trong code async.
 - Không commit `.env`, `.venv`, `node_modules`.
