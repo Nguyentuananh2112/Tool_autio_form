@@ -12,7 +12,13 @@
 - Cần để form có câu ngày/giờ bắt buộc vẫn nộp được. Payload: `entry.X_year/_month/_day`, `entry.X_hour/_minute`.
 
 ### [SPEC-004] `item[5]` của Page Break = điều hướng của trang ĐỨNG TRƯỚC — 2026-11-02
-- Theo mô tả Apps Script `PageBreakItem.setGoToPage`. Chưa xác nhận trên form thật (RISK-002).
+- Theo mô tả Apps Script `PageBreakItem.setGoToPage`. **Đã xác nhận trên form thật 2026-11-02** (CONF-001).
+
+### [SPEC-009] Quan sát từ form thật cần đưa vào UI/UX — 2026-11-02
+- Form có thể bắt đầu bằng Page Break → trang 0 không có câu hỏi; `pageHistory` vẫn bắt đầu từ `0`.
+- Giới hạn "Chọn tối đa 3" thường chỉ nằm trong **tiêu đề câu hỏi**, không phải validation của Google (meta trống). UI nên tự gợi ý `max_checked` bằng cách dò chuỗi "tối đa N" trong tiêu đề, và cho người dùng sửa.
+- Form thật có 7 câu tự luận bắt buộc → nếu chưa có câu trả lời mẫu, generator báo lỗi. UI phải nhắc rõ câu nào còn thiếu và đưa nút "Sinh bằng Gemini" ngay cạnh.
+- Câu hỏi có thể chứa tên người thật (VD: "Bạn nhận được form từ ai?") → không đưa HTML/JSON form thật của người dùng vào repo công khai; fixture phải ẩn danh hóa.
 
 ### [SPEC-005] Thêm CASCADE cho `campaigns.user_id` và `submission_logs.campaign_id` — 2026-11-02
 - Spec chỉ ghi FK; thêm `ondelete=CASCADE` để xóa user/campaign không bị chặn.

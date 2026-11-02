@@ -4,8 +4,9 @@
 - Google có thể đổi chỉ số mảng bất kỳ lúc nào → parser hỏng đồng loạt cho 40–50 user.
 - **Giảm thiểu:** truy cập an toàn `_safe_get`, log cảnh báo khi bỏ qua phần tử; test với HTML form thật đã lưu (fixtures); CI chạy test parser; phát hành bản sửa nhanh qua cơ chế cập nhật.
 
-### [RISK-002] Chỉ số `item[5]` (điều hướng section) và `row[11]` (checkbox grid) chưa xác nhận — OPEN
-- Xem CONF-001. Cần đối chiếu với form thật.
+### [RISK-002] Chỉ số `item[5]` (điều hướng section) và `row[11]` (checkbox grid) — PARTLY RESOLVED 2026-11-02
+- `item[5]` của Page Break = điều hướng của trang trước nó: **đã xác nhận** trên form thật (CONF-001).
+- `row[11]`: grid trắc nghiệm thường có `row[11] = [0]` (đã thấy trên form thật). Chưa có form thật nào chứa **checkbox grid** để xác nhận giá trị `[1]` — vẫn OPEN.
 
 ### [RISK-003] Form yêu cầu thu thập email (`emailAddress`) chưa được xử lý — OPEN
 - Form bật "Thu thập email → Người trả lời nhập" sẽ từ chối POST thiếu trường `emailAddress`. Cần phát hiện ở parser (Phase 2) và cấu hình sinh email.

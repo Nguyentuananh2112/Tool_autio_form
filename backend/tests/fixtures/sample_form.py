@@ -14,8 +14,8 @@ _GRID_COLUMNS = [["1"], ["2"], ["3"], ["4"], ["5"]]
 def build_raw_data() -> list[Any]:
     items: list[Any] = [
         [101, "Giới tính", None, 2, [[1001, [["Nam", None, None], ["Nữ", None, None], ["", None, None, None, 1]], 1]]],
-        [102, "Có dùng sản phẩm?", None, 2, [[1002, [["Có", None, SECTION_2_ID], ["Không", None, -2]], 1]]],
-        [SECTION_2_ID, "Phần 2", None, 8, None, -1],
+        [102, "Có dùng sản phẩm?", None, 2, [[1002, [["Có", None, SECTION_2_ID], ["Không", None, -3]], 1]]],
+        [SECTION_2_ID, "Phần 2", None, 8, None, -2],
         [103, "Ma trận hài lòng", None, 7, [
             [int(entry), _GRID_COLUMNS, 1, [f"HL{i + 1}"]] for i, entry in enumerate(SATISFACTION_ENTRIES)
         ]],

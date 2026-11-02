@@ -8,11 +8,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 OTHER_OPTION_VALUE = "__other_option__"
 
-# Mã điều hướng (theo Mục 5.1.C của SPECIFICATION.md). Dồn về một chỗ để dễ hiệu chỉnh
-# nếu đối chiếu với form thật cho kết quả khác.
-JUMP_NEXT_PAGE = -1
-JUMP_SUBMIT = -2
-JUMP_SUBMIT_ALT = -3  # một số form cũ dùng -3 cho "Gửi biểu mẫu"
+# Mã điều hướng đã xác nhận trên form thật (dev-notes CONF-001) — KHÁC Mục 5.1.C của spec:
+#   -2 = "Tiếp tục đến phần tiếp theo" (mặc định khi bật rẽ nhánh), -3 = "Gửi biểu mẫu".
+#   -1 chưa gặp trên form thật (có thể là "Quay lại phần 1"); tạm coi như sang trang tiếp.
+JUMP_UNCONFIRMED = -1
+JUMP_NEXT_PAGE = -2
+JUMP_SUBMIT = -3
 
 
 class QuestionType(IntEnum):
@@ -56,9 +57,9 @@ class NavigationAction(StrEnum):
 
 def decode_jump(code: int | None) -> tuple[NavigationAction, int | None]:
     """Chuyển mã rẽ nhánh thô thành (hành động, section_item_id đích)."""
-    if code is None or code == 0 or code == JUMP_NEXT_PAGE:
+    if code is None or code == 0 or code in (JUMP_NEXT_PAGE, JUMP_UNCONFIRMED):
         return NavigationAction.NEXT_PAGE, None
-    if code in (JUMP_SUBMIT, JUMP_SUBMIT_ALT):
+    if code == JUMP_SUBMIT:
         return NavigationAction.SUBMIT, None
     if code > 0:
         return NavigationAction.GO_TO_PAGE, code

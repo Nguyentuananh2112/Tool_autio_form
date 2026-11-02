@@ -33,7 +33,7 @@ def test_other_option_and_branching() -> None:
     assert gender.options[-1].value == OTHER_OPTION_VALUE
     usage = form.get_question("1002")
     assert usage is not None
-    assert [o.jump_to_section_id for o in usage.options] == [SECTION_2_ID, -2]
+    assert [o.jump_to_section_id for o in usage.options] == [SECTION_2_ID, -3]
 
 
 def test_grid_rows_and_scale() -> None:

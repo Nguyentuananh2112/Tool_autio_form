@@ -16,7 +16,7 @@
 - [ ] Thử luồng "có bản cập nhật → bấm Cập nhật" trên máy sạch
 
 ## Kiểm tra parser với form thật
-- [ ] Rẽ nhánh: sang phần X / tiếp tục / nộp (CONF-001)
-- [ ] Grid trắc nghiệm & checkbox grid (`row[11]`)
-- [ ] Mục khác (Other), Dropdown, Linear scale, Date, Time
-- [ ] Form thu thập email (RISK-003)
+- [x] Rẽ nhánh: sang phần X / tiếp tục / nộp (CONF-001) — xác nhận 2026-11-02
+- [x] Grid trắc nghiệm — [ ] checkbox grid (`row[11]`)
+- [x] Mục khác (Other), Linear scale 1–5 và 1–10 — [ ] Dropdown, Date, Time
+- [ ] Form thu thập email (RISK-003) — form thật đầu tiên không bật

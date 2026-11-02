@@ -9,7 +9,7 @@
 - Python 3.12.10 tại `%LOCALAPPDATA%\Programs\Python\Python312`.
 - Terminal/VS Code đã mở trước khi cài chưa nhận PATH mới → phải mở lại.
 - Môi trường ảo dự án: `backend/.venv`. Luôn gọi `backend\.venv\Scripts\python.exe`.
-- In tiếng Việt từ Python trong Git Bash cần `PYTHONIOENCODING=utf-8`.
+- In tiếng Việt từ Python trong Git Bash cần `PYTHONIOENCODING=utf-8`. Lưu ý: cờ `python -I` (isolated) **bỏ qua** biến môi trường này → dùng `-X utf8` thay thế khi cần `-I`.
 
 ### [ISS-003] Link `/edit` của Google Form trả về 401 — 2026-11-02 — OPEN
 - **Hiện tượng:** Người dùng gửi link `docs.google.com/forms/d/<id>/edit`. Thử đổi sang `/d/<id>/viewform` → HTTP 401 (cần đăng nhập).
