@@ -15,9 +15,10 @@
 | 6 | `Settings.dc.html` | Cài đặt: Gemini key, cập nhật & kênh, giao diện, mặc định, dữ liệu | `pages/SettingsPage.tsx` |
 | 7 | `DesignSystem.dc.html` | Token màu sáng/tối, chữ, nút, badge, ô nhập | `styles/tokens.css`, `components/ui/*` |
 | 8 | `ExcelImport.dc.html` | Nhập Excel/CSV: file, ghép cột ↔ câu hỏi, xem trước 5 dòng, kiểm tra lỗi | `components/workspace/excel/*` |
-| 9 | `Onboarding.dc.html` | **Chờ duyệt** — Lần đầu mở app: tour 4 bước + danh sách "Bắt đầu nhanh" + mẹo mở lại (bấm thử được) | `components/onboarding/*` |
+| 9 | `Onboarding.dc.html` | **Chờ duyệt** — Tour lần đầu ngay trên giao diện: 14 bước, mỗi bước làm sáng một tính năng + bong bóng giải thích cạnh nó, tự chuyển màn hình (bấm thử được) | `components/tour/*` |
 | 10 | `Help.dc.html` | **Chờ duyệt** — Hướng dẫn: tìm kiếm, 8 thẻ tính năng (Dùng khi / Cách làm), thuật ngữ, câu hỏi thường gặp | `pages/HelpPage.tsx`, `components/help/*` |
 | — | `Sidebar.dc.html` | Thanh điều hướng dùng chung | `components/layout/Sidebar.tsx` |
+| — | `TourPopover.dc.html` | Bong bóng tour (tiêu đề, giải thích, tiến độ, Quay lại / Tiếp / Bỏ qua; 4 hướng đặt) | `components/tour/TourPopover.tsx` |
 
 ## Quyết định thiết kế
 - **Không có màn hình đăng nhập** (người dùng xác nhận — SPEC-011): app desktop, mỗi máy một người dùng.
@@ -29,8 +30,9 @@
 - Font: Be Vietnam Pro (giao diện), JetBrains Mono (mã, nhật ký). Màu nhấn xanh dương; cảnh báo cam, thành công xanh lá, lỗi đỏ — phân biệt cả bằng độ sáng.
 
 ## Hướng dẫn người mới (yêu cầu 2026-11-02, quy tắc 4 trong CLAUDE.md)
-- **Lần đầu mở app:** tour 4 bước (Dán link → Chọn tỷ lệ → Chọn cách gửi → Theo dõi & xuất), có "Bỏ qua" và "Quay lại". Đóng tour → mẹo "mở lại ở mục Hướng dẫn".
-- **Tổng quan khi chưa có gì:** danh sách "Bắt đầu nhanh" 3 việc kèm thanh tiến độ, mỗi việc một nút đi thẳng tới chỗ cần làm.
+- **Lần đầu mở app — tour chỉ dẫn tại chỗ (theo yêu cầu người dùng):** hộp chào mừng → 14 bước đi qua giao diện THẬT. Mỗi bước: tính năng đó được làm sáng (viền xanh), phần còn lại tối đi, bong bóng giải thích đặt ngay cạnh; bấm "Tiếp" chuyển sang tính năng kế tiếp và tự mở màn hình chứa nó (Tổng quan → Cấu hình → Chiến dịch → Hướng dẫn). Có Quay lại, Bỏ qua, thanh tiến độ. Kết thúc → hộp "Xong" + nút dán link form.
+  - Thứ tự: Thanh điều hướng → Phân tích nhanh → Thanh 3 bước → Danh sách trang → Tỷ lệ đáp án → Câu rẽ nhánh → Câu tự luận/Gemini → Tab SPSS/Excel → Thiết lập chạy → Gửi thử & Bắt đầu → Theo dõi trực tiếp → Tạm dừng/Xuất → Nhật ký → Mục Hướng dẫn.
+  - Code: một `TourProvider` giữ danh sách bước `{route, targetId, placement, title, text}`; mỗi phần tử được giới thiệu gắn `data-tour-id`; `TourSpotlight` đo vị trí phần tử để làm sáng; `TourPopover` dùng chung. Thêm tính năng mới = thêm một bước vào danh sách.
 - **Thanh 3 bước** ① Phân tích → ② Cấu hình → ③ Chạy ở đầu màn hình Cấu hình, kèm link "Màn hình này dùng thế nào?".
 - **Trang Hướng dẫn** (mục mới trên thanh bên): mỗi tính năng có "Dùng khi" + "Cách làm" + nút mở đúng chỗ; giải thích thuật ngữ; câu hỏi thường gặp.
 - **Nguyên tắc chung khi code:** mỗi màn hình MỘT nút chính (màu xanh); tùy chọn nâng cao gấp trong "Nâng cao"; màn hình/ô trống luôn nói việc tiếp theo; lỗi viết bằng lời thường kèm cách sửa; thuật ngữ có nút "?" mở giải thích.
@@ -52,7 +54,7 @@ frontend/src/
 │   ├── spss/               # SpssGroupDialog, ItemPicker, TargetParams, AlphaResult, ItemDistribution
 │   ├── campaign/           # CampaignHeader, KpiStrip, LiveProgress, DistributionChart, PaceChart, PathStats, LiveLog
 │   ├── update/             # UpdateBanner, UpdateDialog, DownloadProgress, ReadyToInstall, UpdateToast
-│   ├── onboarding/         # WelcomeTour, TourStep, QuickStartChecklist, ChecklistItem, ReopenTip, StepIndicator
+│   ├── tour/               # TourProvider, tourSteps.ts, TourSpotlight, TourPopover, WelcomeDialog, TourDoneDialog, StepIndicator
 │   ├── help/               # HelpSearch, FeatureCard, GlossaryList, FaqItem, InfoHint ("?")
 │   └── settings/           # GeminiKeySection, UpdateSection, AppearanceSection, DefaultsSection, DataSection
 ├── hooks/                  # useCampaignSocket, useUpdater, useFormParse, useSpssPreview
