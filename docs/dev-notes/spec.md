@@ -63,7 +63,7 @@
 - Số nguyên trong ô của câu thang đo/trắc nghiệm được hiểu là thứ tự đáp án (hoặc giá trị thật nếu thang là số liên tiếp, VD 1–10).
 - Ô Checkbox được tách bằng cách dò lựa chọn dài nhất trước (lựa chọn có thể chứa dấu phẩy); phần dư → "Mục khác" nếu câu có, ngược lại là lỗi dòng.
 - Giá trị không khớp lựa chọn → "Mục khác" (cảnh báo) hoặc lỗi dòng. Dòng lỗi bị bỏ qua và liệt kê cho người dùng.
-- Màn hình tab Excel (artboard 8) **chờ duyệt**.
+- Màn hình tab Excel (artboard 8) **đã duyệt** 2026-11-02.
 
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

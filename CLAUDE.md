@@ -11,7 +11,8 @@ Trao đổi với người dùng bằng **tiếng Việt**. Tên code, thuật n
 1. **UI/UX thiết kế trước, code sau.** Phải có bản thiết kế UI/UX được duyệt trước khi viết frontend (Phase 4); khi code bám sát bản thiết kế đó.
 2. **Ứng dụng desktop (đã chốt 2026-11-02, xem dev-notes SPEC-008)**: mỗi user cài trên máy mình; DB là SQLite nhúng thay cho PostgreSQL/Redis của spec. **Phát hành cho 40–50 người dùng qua GitHub.** Repo trên GitHub, dùng GitHub Actions cho CI/CD (kiểm thử tự động khi push/PR). Khi có bản cập nhật mới (tính năng / sửa lỗi) được publish, người dùng phải **nhận thông báo có bản mới và bấm "Cập nhật" để cập nhật**.
 3. **Cấm "God Component" / "God Module".** Chia nhỏ code thành module/component, tách folder khi cần. Mỗi file một trách nhiệm rõ ràng. Đây là nguyên tắc sống còn, phải tuân thủ cả backend lẫn frontend.
-4. **Ghi chép dev-notes.** Mọi bug, conflict, issue, risk, quyết định lệch spec, vấn đề hiệu năng, checklist kiểm tra đều ghi vào `docs/dev-notes/*.md` để không lặp lại lỗi cũ.
+4. **Người mới mở app phải biết làm gì ngay (yêu cầu 2026-11-02).** Có hướng dẫn lần đầu (tour các bước), danh sách "Bắt đầu nhanh", trang Hướng dẫn tính năng, thanh bước ① Phân tích → ② Cấu hình → ③ Chạy, mỗi màn hình chỉ MỘT nút chính, tùy chọn nâng cao gấp gọn, màn hình trống luôn chỉ ra việc tiếp theo, giải thích thuật ngữ (Alpha, SPSS…) bằng lời thường qua nút "?". Xem `docs/ui-ux/README.md` mục Hướng dẫn người mới.
+5. **Ghi chép dev-notes.** Mọi bug, conflict, issue, risk, quyết định lệch spec, vấn đề hiệu năng, checklist kiểm tra đều ghi vào `docs/dev-notes/*.md` để không lặp lại lỗi cũ.
 
 ## Quy ước kỹ thuật
 - Backend: Python 3.12, môi trường ảo `backend/.venv` (`backend\.venv\Scripts\python.exe`).
