@@ -33,6 +33,7 @@ class CampaignPlan:
     total_target: int
     proxy: str | None
     use_fallback: bool
+    is_demo: bool
     completed_count: int
     failed_count: int
     done_sequences: set[int] = field(default_factory=set)
@@ -88,7 +89,8 @@ async def load_plan(session: AsyncSession, campaign_id: uuid.UUID) -> CampaignPl
         schedule=ScheduleConfig.model_validate(campaign.schedule_config),
         total_target=len(responses),
         proxy=campaign.proxy_list[0] if campaign.proxy_list else None,
-        use_fallback=campaign.use_playwright_fallback,
+        use_fallback=campaign.use_playwright_fallback and not campaign.form.is_demo,
+        is_demo=campaign.form.is_demo,
         completed_count=campaign.completed_count,
         failed_count=campaign.failed_count,
         done_sequences=set(done_rows.scalars().all()),

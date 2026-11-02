@@ -15,8 +15,8 @@
 | 6 | `Settings.dc.html` | Cài đặt: Gemini key, cập nhật & kênh, giao diện, mặc định, dữ liệu | `pages/SettingsPage.tsx` |
 | 7 | `DesignSystem.dc.html` | Token màu sáng/tối, chữ, nút, badge, ô nhập | `styles/tokens.css`, `components/ui/*` |
 | 8 | `ExcelImport.dc.html` | Nhập Excel/CSV: file, ghép cột ↔ câu hỏi, xem trước 5 dòng, kiểm tra lỗi | `components/workspace/excel/*` |
-| 9 | `Onboarding.dc.html` | **Chờ duyệt** — Tour lần đầu ngay trên giao diện: 14 bước, mỗi bước làm sáng một tính năng + bong bóng giải thích cạnh nó, tự chuyển màn hình (bấm thử được) | `components/tour/*` |
-| 10 | `Help.dc.html` | **Chờ duyệt** — Hướng dẫn: tìm kiếm, 8 thẻ tính năng (Dùng khi / Cách làm), thuật ngữ, câu hỏi thường gặp | `pages/HelpPage.tsx`, `components/help/*` |
+| 9 | `Onboarding.dc.html` | Tour lần đầu ngay trên giao diện: 14 bước, mỗi bước làm sáng một tính năng + bong bóng giải thích cạnh nó, tự chuyển màn hình (bấm thử được) | `components/tour/*` |
+| 10 | `Help.dc.html` | Hướng dẫn: tìm kiếm, 8 thẻ tính năng (Dùng khi / Cách làm), thuật ngữ, câu hỏi thường gặp | `pages/HelpPage.tsx`, `components/help/*` |
 | — | `Sidebar.dc.html` | Thanh điều hướng dùng chung | `components/layout/Sidebar.tsx` |
 | — | `TourPopover.dc.html` | Bong bóng tour (tiêu đề, giải thích, tiến độ, Quay lại / Tiếp / Bỏ qua; 4 hướng đặt) | `components/tour/TourPopover.tsx` |
 

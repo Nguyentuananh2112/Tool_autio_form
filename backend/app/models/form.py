@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, DateTime, String, Text, Uuid, func
+from sqlalchemy import JSON, Boolean, DateTime, String, Text, Uuid, false, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -22,6 +22,8 @@ class Form(Base):
     submit_url: Mapped[str] = mapped_column(Text, nullable=False)
     # Kết quả ParsedFormStructure.model_dump(mode="json") từ form_parser
     parsed_structure: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    # Form mẫu của Chế độ tập dùng: mọi lần gửi chỉ mô phỏng, không gửi lên Google (SPEC-017)
+    is_demo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

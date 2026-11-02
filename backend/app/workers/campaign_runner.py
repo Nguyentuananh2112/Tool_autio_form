@@ -32,6 +32,7 @@ from app.workers.campaign_loader import CampaignPlan, campaign_seed, load_plan
 from app.workers.http_submitter import HttpSubmitter
 from app.workers.playwright_fallback import FallbackUnavailableError, PlaywrightSubmitter
 from app.workers.rate_guard import RateGuard
+from app.workers.simulated_submitter import SimulatedSubmitter
 from app.workers.scheduler import poisson_delays, remaining_duration_seconds
 from app.workers.submission_types import RETRYABLE_KINDS, OutcomeKind, SubmitOutcome, payload_to_json
 
@@ -114,7 +115,8 @@ class CampaignRunner:
             self._fill_queue(plan)
             await self._set_status(CampaignStatus.RUNNING)
 
-            self._http = self.http_factory(plan.proxy)
+            # Chế độ tập dùng: không bao giờ gửi ra ngoài, bất kể http_factory nào được truyền vào
+            self._http = SimulatedSubmitter() if plan.is_demo else self.http_factory(plan.proxy)
             workers = plan.schedule.concurrency if plan.schedule.mode == ScheduleMode.BURST else 1
             await asyncio.gather(*(self._worker() for _ in range(max(1, workers))))
             return await self._finish()

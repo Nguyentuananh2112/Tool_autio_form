@@ -74,5 +74,13 @@
 - Khởi động: chiến dịch còn RUNNING (app tắt đột ngột) → PAUSED. Tắt app: dừng an toàn mọi chiến dịch.
 - Chạy backend: `python -m app` (cổng mặc định 8765, chỉ 127.0.0.1).
 
+### [SPEC-017] Chế độ tập dùng (form mẫu, không gửi ra ngoài) — 2026-11-02 — CHỐT
+- Người dùng chọn: người mới tập mọi tính năng mà KHÔNG gửi gì lên Google, không cần link thật.
+- `POST /api/v1/forms/demo` tạo/dùng lại form mẫu (`forms.is_demo = true`, địa chỉ `*.invalid`, có rẽ nhánh, hộp kiểm + Mục khác, lưới Likert, thang 1–10, tự luận).
+- Chiến dịch trên form mẫu: runner LUÔN dùng `SimulatedSubmitter` (engine `SIMULATED`), bỏ qua `http_factory` và trình duyệt dự phòng. `trial-submit` có `dry_run` để xem trước dữ liệu mà không gửi; form mẫu luôn mô phỏng.
+- Test `test_practice_mode.py` dùng bộ gửi "nổ" nếu bị gọi để chứng minh không có gì đi ra ngoài.
+- UI (Phase 4): nút "Thử với form mẫu" ở Tổng quan và cuối tour; nhãn "Chế độ tập dùng" luôn hiện khi đang ở form mẫu.
+- Việc kiểm chứng gửi thật (RISK-009/010) vẫn cần một form thử riêng của người dùng — để sau.
+
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

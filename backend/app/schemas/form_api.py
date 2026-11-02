@@ -23,6 +23,7 @@ class FormSummary(BaseModel):
     submit_url: str
     total_pages: int
     question_count: int
+    is_demo: bool = False
     created_at: datetime
 
 

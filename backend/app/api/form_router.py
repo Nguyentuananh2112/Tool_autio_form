@@ -9,6 +9,7 @@ from app.api.deps import DbSession
 from app.models import Form
 from app.schemas.form_api import FormDetail, FormParseRequest, FormSummary
 from app.services.campaign_service import get_form, structure_of
+from app.services.demo_form import build_demo_structure
 from app.services.form_parser import parse_google_form
 
 router = APIRouter(prefix="/forms", tags=["forms"])
@@ -18,7 +19,8 @@ def _summary(form: Form) -> FormSummary:
     structure = structure_of(form)
     return FormSummary(
         id=form.id, title=form.title, view_url=form.view_url, submit_url=form.submit_url,
-        total_pages=structure.total_pages, question_count=len(structure.questions), created_at=form.created_at,
+        total_pages=structure.total_pages, question_count=len(structure.questions), is_demo=form.is_demo,
+        created_at=form.created_at,
     )
 
 
@@ -32,6 +34,23 @@ async def parse_form(payload: FormParseRequest, session: DbSession) -> FormDetai
     form = Form(
         title=structure.title, view_url=structure.view_url, submit_url=structure.submit_url,
         parsed_structure=structure.model_dump(mode="json"),
+    )
+    session.add(form)
+    await session.commit()
+    await session.refresh(form)
+    return _detail(form)
+
+
+@router.post("/demo", response_model=FormDetail)
+async def open_demo_form(session: DbSession) -> FormDetail:
+    """Chế độ tập dùng: trả về form mẫu (tạo nếu chưa có). Mọi lần gửi trên form này chỉ là mô phỏng."""
+    existing = (await session.execute(select(Form).where(Form.is_demo.is_(True)).limit(1))).scalar_one_or_none()
+    if existing is not None:
+        return _detail(existing)
+    structure = build_demo_structure()
+    form = Form(
+        title=structure.title, view_url=structure.view_url, submit_url=structure.submit_url,
+        parsed_structure=structure.model_dump(mode="json"), is_demo=True,
     )
     session.add(form)
     await session.commit()

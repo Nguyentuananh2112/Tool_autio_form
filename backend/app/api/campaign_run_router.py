@@ -17,6 +17,7 @@ from app.services import campaign_service, export_service
 from app.services.spss_generator import SurveyDataGenerator, build_payload_tuples
 from app.workers.campaign_control import registry
 from app.workers.campaign_runner import default_http_factory, start_campaign
+from app.workers.simulated_submitter import SimulatedSubmitter
 from app.workers.submission_types import payload_to_json
 
 router = APIRouter(prefix="/campaigns", tags=["campaign-run"])
@@ -121,11 +122,15 @@ async def export(
 @router.post("/trial-submit", response_model=TrialSubmitResponse)
 async def trial_submit(payload: TrialSubmitRequest, session: DbSession, runner_kwargs: RunnerKwargs) -> TrialSubmitResponse:
     """Nút "Gửi thử 1 phản hồi": sinh 1 phản hồi theo cấu hình hiện tại và gửi thật lên form."""
-    structure = campaign_service.structure_of(await campaign_service.get_form(session, payload.form_id))
+    form = await campaign_service.get_form(session, payload.form_id)
+    structure = campaign_service.structure_of(form)
     generator = SurveyDataGenerator(structure, payload.rules, payload.spss_groups)
     response = (await asyncio.to_thread(generator.generate, 1))[0]
     tuples = build_payload_tuples(response, structure.fbzx)
-    submitter = runner_kwargs.get("http_factory", default_http_factory)(payload.proxy)
+    if form.is_demo or payload.dry_run:
+        submitter = SimulatedSubmitter(delay=0)
+    else:
+        submitter = runner_kwargs.get("http_factory", default_http_factory)(payload.proxy)
     try:
         outcome = await submitter.submit(structure, tuples)
     finally:

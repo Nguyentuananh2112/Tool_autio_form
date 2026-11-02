@@ -17,12 +17,13 @@ if TYPE_CHECKING:
 class EngineUsed(StrEnum):
     HTTPX = "HTTPX"
     PLAYWRIGHT = "PLAYWRIGHT"
+    SIMULATED = "SIMULATED"  # Chế độ tập dùng: không gửi gì ra ngoài (SPEC-017)
 
 
 class SubmissionLog(Base):
     __tablename__ = "submission_logs"
     __table_args__ = (
-        CheckConstraint("engine_used IN ('HTTPX', 'PLAYWRIGHT')", name="engine_used_valid"),
+        CheckConstraint("engine_used IN ('HTTPX', 'PLAYWRIGHT', 'SIMULATED')", name="engine_used_valid"),
         Index("ix_submission_logs_campaign_sequence", "campaign_id", "sequence_number"),
     )
 

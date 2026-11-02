@@ -74,6 +74,8 @@ class TrialSubmitRequest(BaseModel):
     rules: list[QuestionRuleConfig] = Field(default_factory=list)
     spss_groups: list[SpssGroupConfig] = Field(default_factory=list)
     proxy: str | None = Field(default=None, max_length=500)
+    # True = chỉ mô phỏng, xem dữ liệu sẽ gửi (form mẫu luôn mô phỏng)
+    dry_run: bool = False
 
 
 class TrialSubmitResponse(BaseModel):
