@@ -32,5 +32,9 @@
 - Còn phải chốt khi thiết kế: khung desktop (Electron + electron-updater hay Tauri + updater plugin), có giữ đăng nhập tài khoản không (app một người dùng/máy), nơi lưu Gemini API key (bộ nhớ an toàn của hệ điều hành).
 - Ưu điểm đã cân nhắc: mỗi máy gửi form từ IP riêng, không tốn VPS.
 
+### [SPEC-010] Bản thiết kế UI/UX v1 — 2026-11-02 — CHỜ DUYỆT
+- 8 artboard (6 màn hình + hộp thoại SPSS + sidebar + hệ thống thiết kế). Chi tiết & cây component: `docs/ui-ux/README.md`.
+- Giả định cần xác nhận: bỏ màn hình đăng nhập (app một người dùng/máy); không có màn hình riêng cho Excel (mới là tab, sẽ thiết kế khi làm Phase 2).
+
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

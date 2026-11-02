@@ -4,6 +4,7 @@ Trao đổi với người dùng bằng **tiếng Việt**. Tên code, thuật n
 
 ## Tài liệu nguồn
 - `docs/SPECIFICATION.md`: bản đặc tả kỹ thuật gốc (kiến trúc bắt buộc, 4 Phase).
+- `docs/ui-ux/README.md`: bản thiết kế UI/UX (link canvas, danh sách màn hình, cây component). Frontend phải bám theo.
 - `docs/dev-notes/`: sổ ghi chép bug / conflict / issue / risk / spec / perf / check. **Đọc trước khi bắt đầu một Phase hoặc sửa module liên quan; ghi thêm ngay khi gặp vấn đề mới.**
 
 ## Yêu cầu bổ sung của người dùng (ngoài spec)
