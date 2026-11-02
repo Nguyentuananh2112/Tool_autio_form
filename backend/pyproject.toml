@@ -1,0 +1,8 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 130
+
+[tool.ruff.lint]
+# F: lỗi thật (import thừa, biến chưa định nghĩa) · E9: lỗi cú pháp · B: lỗi logic phổ biến
+select = ["F", "E9", "B"]
+ignore = ["B905"]  # zip() không cần strict=: các dãy được dựng cùng độ dài ngay trước đó

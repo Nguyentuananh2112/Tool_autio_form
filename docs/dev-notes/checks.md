@@ -1,7 +1,9 @@
 # Checklists
 
 ## Trước mỗi commit
-- [ ] Code chạy được: import module + smoke test / pytest pass
+- [ ] `pytest -q` pass (trong `backend/`, dùng `.venv\Scripts\python.exe -m pytest -q`)
+- [ ] `python -m ruff check app tests` sạch (cấu hình trong `backend/pyproject.toml`)
+- [ ] `wc -l app/*/*.py app/*/*/*.py`: không file nào > 400 dòng (SPEC-014)
 - [ ] Không có file > ~400 dòng (Python) / > ~200 dòng (React component) mà không có lý do
 - [ ] Không commit `.env`, `.venv`, `node_modules`, dữ liệu thật của user
 - [ ] Đã ghi vấn đề mới vào `docs/dev-notes/`

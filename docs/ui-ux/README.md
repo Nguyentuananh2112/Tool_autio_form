@@ -14,6 +14,7 @@
 | 5 | `Update.dc.html` | Luồng cập nhật: có bản mới → tải → sẵn sàng → khởi động lại (bấm thử được) | `components/update/*` |
 | 6 | `Settings.dc.html` | Cài đặt: Gemini key, cập nhật & kênh, giao diện, mặc định, dữ liệu | `pages/SettingsPage.tsx` |
 | 7 | `DesignSystem.dc.html` | Token màu sáng/tối, chữ, nút, badge, ô nhập | `styles/tokens.css`, `components/ui/*` |
+| 8 | `ExcelImport.dc.html` | **Chờ duyệt** — Nhập Excel/CSV: file, ghép cột ↔ câu hỏi, xem trước 5 dòng, kiểm tra lỗi | `components/workspace/excel/*` |
 | — | `Sidebar.dc.html` | Thanh điều hướng dùng chung | `components/layout/Sidebar.tsx` |
 
 ## Quyết định thiết kế

@@ -42,5 +42,28 @@
 - Gemini API key chuyển từ cột `users.gemini_api_key` sang kho bảo mật của Windows (thư viện `keyring`), cấu hình ở màn hình Cài đặt.
 - Backend chỉ nghe trên `127.0.0.1` nên không cần xác thực tài khoản; sẽ dùng token ngẫu nhiên mỗi lần khởi động giữa app desktop và backend để chặn trang web lạ gọi vào cổng local (thiết kế ở Phase 3).
 
+### [SPEC-012] Phase 2: KHÔNG lách cơ chế chặn của Google — 2026-11-02 — CHỐT (người dùng đồng ý)
+- Bỏ khỏi spec Mục 5.4.C: xoay User-Agent ngẫu nhiên, xoay proxy khi gặp 429/403, chuyển sang Playwright để vượt 429/403.
+- Thay bằng `workers/rate_guard.py`: bị 429/403 → nhân đôi khoảng nghỉ (tối đa ×16), chờ theo `Retry-After`; bị 3 lần liên tiếp → **tự tạm dừng** chiến dịch với lý do rõ ràng; người dùng bấm Tiếp tục thì chạy lại với nhịp chậm.
+- User-Agent cố định, trung thực (`HTTP_USER_AGENT`). Proxy: tối đa **một** proxy cố định cho mạng của người dùng (`proxy_list[0]`), không xoay vòng.
+- Playwright chỉ dùng khi lỗi **dữ liệu** (400 / Google trả lại form), qua link điền sẵn `viewform?usp=pp_url&entry.X=...` rồi bấm Tiếp/Gửi.
+- Đã sửa bản thiết kế (Workspace: ô proxy đơn + nhãn trình duyệt; Campaign: nhật ký mẫu) cho khớp.
+
+### [SPEC-013] Gửi payload bằng `content=urlencode(list_of_tuples)` — 2026-11-02
+- Spec ghi truyền `list[tuple]` vào httpx; httpx 0.28 chỉ nhận `data` là dict. Dùng `urlencode` để giữ đúng thứ tự và khóa lặp của Checkbox, header `application/x-www-form-urlencoded`.
+
+### [SPEC-014] Tách module lớn (chống God Module) — 2026-11-02
+- `spss_generator.py` (946 dòng) → package `services/spss/` 11 file; `spss_generator.py` chỉ còn re-export API (giữ tên file như spec).
+- `form_parser.py` (460 dòng) → `form_errors.py`, `form_url.py`, `fb_data_parser.py` + `form_parser.py` (tải & ghép).
+- Excel: `excel_reader.py` (đọc file), `answer_coercion.py` (ô → câu trả lời), `excel_mapper.py` (ghép cột, chuyển dòng).
+- Worker: `scheduler`, `rate_guard`, `submission_types`, `campaign_control` (thay Redis), `campaign_loader`, `campaign_runner`, `http_submitter`, `playwright_fallback`.
+- **Quy tắc:** chạy `wc -l app/*/*.py app/*/*/*.py` trước mỗi commit; file > 400 dòng phải tách.
+
+### [SPEC-015] Excel: dữ liệu đã mã hóa SPSS & ô Checkbox — 2026-11-02
+- Số nguyên trong ô của câu thang đo/trắc nghiệm được hiểu là thứ tự đáp án (hoặc giá trị thật nếu thang là số liên tiếp, VD 1–10).
+- Ô Checkbox được tách bằng cách dò lựa chọn dài nhất trước (lựa chọn có thể chứa dấu phẩy); phần dư → "Mục khác" nếu câu có, ngược lại là lỗi dòng.
+- Giá trị không khớp lựa chọn → "Mục khác" (cảnh báo) hoặc lỗi dòng. Dòng lỗi bị bỏ qua và liệt kê cho người dùng.
+- Màn hình tab Excel (artboard 8) **chờ duyệt**.
+
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

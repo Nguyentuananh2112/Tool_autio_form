@@ -30,6 +30,19 @@
   - DB `:memory:` cần `StaticPool`, nếu không mỗi kết nối là một DB rỗng riêng.
   - Biến môi trường `DATA_DIR=` rỗng bị Pydantic hiểu thành thư mục hiện tại → không để rỗng trong `.env`.
 
+### [RISK-009] Nhận biết gửi thành công chỉ dựa trên suy đoán — OPEN (ưu tiên cao)
+- `http_submitter.classify_response`: 200 + có chuỗi xác nhận ("Câu trả lời của bạn đã được ghi lại"…) **hoặc** trang trả về không chứa `FB_PUBLIC_LOAD_DATA_` → coi là thành công.
+- Chưa kiểm chứng với Google thật vì gửi thử sẽ tạo phản hồi thật trong form của người dùng.
+- **Cần làm:** người dùng tạo một form thử của riêng mình → gửi 1 phản hồi bằng app → đối chiếu trong tab Câu trả lời; lưu HTML trang xác nhận (ẩn danh) làm fixture test.
+
+### [RISK-010] Trình duyệt dự phòng chưa chạy thật lần nào — OPEN
+- Chromium chưa được tải trên máy dev; `playwright_fallback.py` mới có test cho link điền sẵn.
+- Chưa xác nhận: link điền sẵn giữ giá trị qua nhiều trang; tên nút "Tiếp"/"Gửi" (giao diện tiếng Việt) và "Next"/"Submit".
+- **Cần làm:** cùng form thử của RISK-009, chạy `playwright install chromium` rồi gửi 1 phản hồi qua trình duyệt.
+
+### [RISK-011] `fbzx` dùng chung cho mọi lần gửi — MONITORING
+- Token lấy một lần lúc phân tích form. Nếu Google bắt đầu kiểm tra token theo phiên, mọi lần gửi sẽ lỗi → khi đó tải lại form trước mỗi phản hồi.
+
 ### [RISK-008] Thay đổi schema giữa các phiên bản phát hành — OPEN
 - 40–50 máy đã có file DB cũ; bản cập nhật đổi cột/bảng mà chỉ dùng `create_all` sẽ không thêm cột mới → lỗi khi chạy.
 - **Giảm thiểu:** thêm Alembic (hỗ trợ batch mode cho SQLite) trước bản phát hành đầu tiên; app tự chạy migration khi khởi động; sao lưu file DB trước khi migrate.

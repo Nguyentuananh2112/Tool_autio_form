@@ -1,4 +1,4 @@
-# Backend app desktop (SQLite nhúng). Phase 2/3 sẽ bổ sung FastAPI, Playwright, google-genai, keyring...
+# Backend app desktop (SQLite nhúng). Phase 3 sẽ bổ sung FastAPI, uvicorn.
 pydantic>=2.9,<3
 pydantic-settings>=2.6,<3
 sqlalchemy[asyncio]>=2.0.36,<2.1
@@ -8,3 +8,7 @@ numpy>=2.1,<3
 scipy>=1.14,<2
 pandas>=2.2,<3
 openpyxl>=3.1,<4
+google-genai>=1.20,<3
+keyring>=25,<26
+# Chromium KHÔNG tải sẵn: chỉ tải khi người dùng bật trình duyệt dự phòng (RISK-006)
+playwright>=1.48,<2
