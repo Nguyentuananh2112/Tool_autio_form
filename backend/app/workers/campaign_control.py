@@ -117,6 +117,17 @@ class CampaignRegistry:
     def active_ids(self) -> list[str]:
         return [cid for cid, control in self._controls.items() if control.is_active]
 
+    async def stop_all(self, timeout: float) -> None:
+        """Dừng an toàn mọi chiến dịch đang chạy (tắt app / dọn dẹp test)."""
+        tasks = []
+        for control in self._controls.values():
+            if control.is_active and control.task is not None:
+                control.cancel()
+                tasks.append(control.task)
+        if tasks:
+            await asyncio.wait(tasks, timeout=timeout)
+        self._controls.clear()
+
 
 registry = CampaignRegistry()
 event_bus = EventBus()

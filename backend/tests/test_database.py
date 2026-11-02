@@ -3,7 +3,8 @@ from collections.abc import AsyncIterator
 import pytest
 from sqlalchemy import func, select
 
-from app.core.database import AsyncSessionLocal, Base, engine, init_db
+from app.core.database import AsyncSessionLocal, init_db
+from tests.db_helpers import reset_database
 from app.models import Campaign, CampaignStatus, Form, QuestionRule, SubmissionLog
 
 
@@ -11,8 +12,7 @@ from app.models import Campaign, CampaignStatus, Form, QuestionRule, SubmissionL
 async def fresh_db() -> AsyncIterator[None]:
     await init_db()
     yield
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    await reset_database()
 
 
 async def _seed() -> Campaign:

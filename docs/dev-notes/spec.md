@@ -65,5 +65,14 @@
 - Giá trị không khớp lựa chọn → "Mục khác" (cảnh báo) hoặc lỗi dòng. Dòng lỗi bị bỏ qua và liệt kê cho người dùng.
 - Màn hình tab Excel (artboard 8) **đã duyệt** 2026-11-02.
 
+### [SPEC-016] Phase 3: API local cho app desktop — 2026-11-02
+- **Không có `/auth/*`** (SPEC-011). Thay bằng `APP_TOKEN`: vỏ desktop sinh mã ngẫu nhiên mỗi lần khởi động, truyền qua biến môi trường; client gửi header `X-App-Token` (WebSocket: `?token=`). Bản phát hành thiếu token → từ chối tất cả (fail closed). `/api/v1/health` không cần token.
+- Thêm so với spec: `GET/DELETE /forms`, `/forms/{id}/excel-convert` (file + ghép cột → bản ghi lưu vào chiến dịch), `/campaigns/{id}/stop`, `/campaigns/{id}/logs`, `/campaigns/trial-submit` (nút "Gửi thử 1 phản hồi"), `/settings` + `/settings/gemini-key`.
+- `/export-csv` của spec → `/campaigns/{id}/export?format=xlsx|csv`; Excel có 2 trang "Dữ liệu" và "SPSS (mã số)".
+- Lỗi trả về thống nhất `{"detail": {"message", "errors"}}` bằng tiếng Việt (`api/errors.py`).
+- WebSocket gửi `SNAPSHOT` ngay khi kết nối, rồi `SUBMISSION_UPDATE` / `STATUS_CHANGE` / `RATE_LIMITED`, `PING` mỗi 25 giây.
+- Khởi động: chiến dịch còn RUNNING (app tắt đột ngột) → PAUSED. Tắt app: dừng an toàn mọi chiến dịch.
+- Chạy backend: `python -m app` (cổng mặc định 8765, chỉ 127.0.0.1).
+
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

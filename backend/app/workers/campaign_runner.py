@@ -62,11 +62,11 @@ class _WorkItem:
     delay: float
 
 
-def _default_http_factory(proxy: str | None) -> FormSubmitter:
+def default_http_factory(proxy: str | None) -> FormSubmitter:
     return HttpSubmitter(user_agent=get_settings().HTTP_USER_AGENT, proxy=proxy)
 
 
-def _default_browser_factory(proxy: str | None) -> BrowserSubmitter:
+def default_browser_factory(proxy: str | None) -> BrowserSubmitter:
     return PlaywrightSubmitter(proxy=proxy)
 
 
@@ -78,8 +78,8 @@ class CampaignRunner:
         control: CampaignControl,
         bus: EventBus = event_bus,
         session_factory: async_sessionmaker[AsyncSession] = AsyncSessionLocal,
-        http_factory: Callable[[str | None], FormSubmitter] = _default_http_factory,
-        browser_factory: Callable[[str | None], BrowserSubmitter] = _default_browser_factory,
+        http_factory: Callable[[str | None], FormSubmitter] = default_http_factory,
+        browser_factory: Callable[[str | None], BrowserSubmitter] = default_browser_factory,
         rate_guard: RateGuard | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:

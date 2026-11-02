@@ -1,4 +1,4 @@
-# Backend app desktop (SQLite nhúng). Phase 3 sẽ bổ sung FastAPI, uvicorn.
+# Backend app desktop (SQLite nhúng, FastAPI chạy local 127.0.0.1).
 pydantic>=2.9,<3
 pydantic-settings>=2.6,<3
 sqlalchemy[asyncio]>=2.0.36,<2.1
@@ -12,3 +12,6 @@ google-genai>=1.20,<3
 keyring>=25,<26
 # Chromium KHÔNG tải sẵn: chỉ tải khi người dùng bật trình duyệt dự phòng (RISK-006)
 playwright>=1.48,<2
+fastapi>=0.115,<1
+uvicorn[standard]>=0.32,<1
+python-multipart>=0.0.12

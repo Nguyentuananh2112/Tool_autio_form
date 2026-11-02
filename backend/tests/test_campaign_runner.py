@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from sqlalchemy import func, select
 
-from app.core.database import AsyncSessionLocal, Base, engine, init_db
+from app.core.database import AsyncSessionLocal, init_db
 from app.models import Campaign, CampaignStatus, Form, QuestionRule, SubmissionLog
 from app.models.submission_log import EngineUsed
 from app.services.form_parser import parse_form_html
@@ -14,6 +14,7 @@ from app.workers.campaign_control import CampaignControl, EventBus
 from app.workers.campaign_runner import CampaignRunner
 from app.workers.rate_guard import RateGuard
 from app.workers.submission_types import OutcomeKind, SubmitOutcome
+from tests.db_helpers import reset_database
 from tests.fixtures.sample_form import FINAL_URL, build_html
 
 FORM = parse_form_html(build_html(), FINAL_URL)
@@ -63,8 +64,7 @@ async def campaign_id() -> AsyncIterator[uuid.UUID]:
         await session.commit()
         cid = campaign.id
     yield cid
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    await reset_database()
 
 
 def _runner(cid: uuid.UUID, http: ScriptedHttp, browser: FakeBrowser, bus: EventBus, control: CampaignControl) -> CampaignRunner:

@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     HOST: str = "127.0.0.1"
     PORT: int = Field(default=8765, ge=1024, le=65535)
     CORS_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # Mã ngẫu nhiên do vỏ app desktop sinh mỗi lần khởi động và truyền qua biến môi trường.
+    # Mọi request phải gửi kèm header X-App-Token (WebSocket: ?token=). Bỏ trống chỉ được
+    # phép khi ENVIRONMENT=development (dev-notes SPEC-011).
+    APP_TOKEN: str | None = None
 
     # ------------------------------------------------------------- Storage
     DATA_DIR: Path = Field(default_factory=default_data_dir)
