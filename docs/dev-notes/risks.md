@@ -10,5 +10,16 @@
 ### [RISK-003] Form yêu cầu thu thập email (`emailAddress`) chưa được xử lý — OPEN
 - Form bật "Thu thập email → Người trả lời nhập" sẽ từ chối POST thiếu trường `emailAddress`. Cần phát hiện ở parser (Phase 2) và cấu hình sinh email.
 
-### [RISK-004] Chưa chốt mô hình triển khai cho 40–50 user — OPEN
-- Web tập trung (1 server, CD tự deploy) vs ứng dụng desktop (mỗi máy tự cập nhật từ GitHub Release) ảnh hưởng toàn bộ: cơ chế auto-update, DB (PostgreSQL/Redis chạy ở đâu), bảo mật API key, thiết kế UI/UX. Phải chốt trước khi thiết kế UI/UX.
+### [RISK-004] Chưa chốt mô hình triển khai cho 40–50 user — RESOLVED 2026-11-02
+- Người dùng chọn **ứng dụng desktop**. Xem SPEC-008.
+
+### [RISK-005] Windows SmartScreen chặn file .exe chưa ký số — OPEN
+- Bộ cài không có chứng chỉ code-signing sẽ hiện cảnh báo "Windows protected your PC" cho cả 40–50 user, và có thể bị antivirus nghi ngờ (đặc biệt app tự tải bản cập nhật).
+- **Giảm thiểu:** hướng dẫn "More info → Run anyway" trong tài liệu; cân nhắc mua chứng chỉ code-signing hoặc dùng Azure Trusted Signing.
+
+### [RISK-006] Dung lượng bộ cài khi kèm Python + Playwright Chromium — OPEN
+- PyInstaller backend (~80–150MB) + Chromium (~150MB+) làm bộ cài và mỗi lần cập nhật rất nặng.
+- **Giảm thiểu:** không đóng gói Chromium vào bộ cài; tải Chromium lần đầu khi user bật Playwright Fallback; cập nhật khác biệt (differential) nếu framework hỗ trợ.
+
+### [RISK-007] Models đang dùng kiểu riêng của PostgreSQL (`JSONB`, `UUID`) — OPEN
+- App desktop dùng SQLite → phải đổi sang kiểu trung lập (`JSON`, `Uuid` của SQLAlchemy 2.0) và bỏ `::jsonb` trong `server_default`. Làm trước Phase 2.

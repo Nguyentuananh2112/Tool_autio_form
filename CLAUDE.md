@@ -8,7 +8,7 @@ Trao đổi với người dùng bằng **tiếng Việt**. Tên code, thuật n
 
 ## Yêu cầu bổ sung của người dùng (ngoài spec)
 1. **UI/UX thiết kế trước, code sau.** Phải có bản thiết kế UI/UX được duyệt trước khi viết frontend (Phase 4); khi code bám sát bản thiết kế đó.
-2. **Phát hành cho 40–50 người dùng qua GitHub.** Repo trên GitHub, dùng GitHub Actions cho CI/CD (kiểm thử tự động khi push/PR). Khi có bản cập nhật mới (tính năng / sửa lỗi) được publish, người dùng phải **nhận thông báo có bản mới và bấm "Cập nhật" để cập nhật**.
+2. **Ứng dụng desktop (đã chốt 2026-11-02, xem dev-notes SPEC-008)**: mỗi user cài trên máy mình; DB là SQLite nhúng thay cho PostgreSQL/Redis của spec. **Phát hành cho 40–50 người dùng qua GitHub.** Repo trên GitHub, dùng GitHub Actions cho CI/CD (kiểm thử tự động khi push/PR). Khi có bản cập nhật mới (tính năng / sửa lỗi) được publish, người dùng phải **nhận thông báo có bản mới và bấm "Cập nhật" để cập nhật**.
 3. **Cấm "God Component" / "God Module".** Chia nhỏ code thành module/component, tách folder khi cần. Mỗi file một trách nhiệm rõ ràng. Đây là nguyên tắc sống còn, phải tuân thủ cả backend lẫn frontend.
 4. **Ghi chép dev-notes.** Mọi bug, conflict, issue, risk, quyết định lệch spec, vấn đề hiệu năng, checklist kiểm tra đều ghi vào `docs/dev-notes/*.md` để không lặp lại lỗi cũ.
 

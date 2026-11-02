@@ -20,5 +20,11 @@
 ### [SPEC-006] Chặn SSRF ở parser — 2026-11-02
 - Chỉ nhận host `docs.google.com/forms` và `forms.gle`; từ chối link `/edit`.
 
+### [SPEC-008] Mô hình triển khai: ỨNG DỤNG DESKTOP — 2026-11-02 — CHỐT
+- Người dùng chọn: mỗi user cài app trên máy mình; app kiểm tra GitHub Release, báo "Có bản mới" và nút "Cập nhật".
+- **Lệch spec có chủ đích:** PostgreSQL + Redis → SQLite nhúng (async qua `aiosqlite`) + trạng thái chiến dịch trong bộ nhớ của tiến trình backend. Backend FastAPI chạy local `127.0.0.1` như một tiến trình con (sidecar) đóng gói bằng PyInstaller; frontend React giữ nguyên.
+- Còn phải chốt khi thiết kế: khung desktop (Electron + electron-updater hay Tauri + updater plugin), có giữ đăng nhập tài khoản không (app một người dùng/máy), nơi lưu Gemini API key (bộ nhớ an toàn của hệ điều hành).
+- Ưu điểm đã cân nhắc: mỗi máy gửi form từ IP riêng, không tốn VPS.
+
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.
