@@ -10,7 +10,17 @@ from typing import Any
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import ai_router, campaign_router, campaign_run_router, excel_router, form_router, health_router, settings_router, ws_router
+from app.api import (
+    ai_router,
+    campaign_router,
+    campaign_run_router,
+    excel_router,
+    form_router,
+    health_router,
+    settings_router,
+    system_router,
+    ws_router,
+)
 from app.api.deps import require_app_token
 from app.api.errors import register_error_handlers
 from app.core.config import get_settings
@@ -59,7 +69,7 @@ def create_app(*, runner_kwargs: dict[str, Any] | None = None) -> FastAPI:
     prefix = app_settings.API_V1_PREFIX
     app.include_router(health_router.router, prefix=prefix)
     protected = [Depends(require_app_token)]
-    for module in (form_router, excel_router, ai_router, settings_router, campaign_router, campaign_run_router):
+    for module in (form_router, excel_router, ai_router, settings_router, campaign_router, campaign_run_router, system_router):
         app.include_router(module.router, prefix=prefix, dependencies=protected)
     app.include_router(ws_router.router)
     return app

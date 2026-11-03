@@ -11,12 +11,16 @@
 ### [RISK-003] Form yêu cầu thu thập email (`emailAddress`) chưa được xử lý — OPEN
 - Form bật "Thu thập email → Người trả lời nhập" sẽ từ chối POST thiếu trường `emailAddress`. Cần phát hiện ở parser (Phase 2) và cấu hình sinh email.
 
-### [RISK-004] Chưa chốt mô hình triển khai cho 40–50 user — RESOLVED 2026-11-02
+### [RISK-004] Chưa chốt mô hình triển khai cho 40–50 user — RESOLVED 2026-11-02 (Electron: SPEC-019)
 - Người dùng chọn **ứng dụng desktop**. Xem SPEC-008.
 
 ### [RISK-005] Windows SmartScreen chặn file .exe chưa ký số — OPEN
 - Bộ cài không có chứng chỉ code-signing sẽ hiện cảnh báo "Windows protected your PC" cho cả 40–50 user, và có thể bị antivirus nghi ngờ (đặc biệt app tự tải bản cập nhật).
 - **Giảm thiểu:** hướng dẫn "More info → Run anyway" trong tài liệu; cân nhắc mua chứng chỉ code-signing hoặc dùng Azure Trusted Signing.
+
+### [RISK-012] Bản cài chưa có nút tải Chromium cho trình duyệt dự phòng — OPEN
+- Bản đóng gói có driver Playwright nhưng KHÔNG có Chromium; khi form cần trình duyệt dự phòng, nhật ký sẽ ghi "Chưa tải trình duyệt Chromium" và phản hồi đó tính là lỗi.
+- **Cần làm:** endpoint tải Chromium bằng driver đi kèm (`playwright._impl._driver`) + nút trong Cài đặt; kiểm cùng RISK-010.
 
 ### [RISK-006] Dung lượng bộ cài khi kèm Python + Playwright Chromium — OPEN
 - PyInstaller backend (~80–150MB) + Chromium (~150MB+) làm bộ cài và mỗi lần cập nhật rất nặng.

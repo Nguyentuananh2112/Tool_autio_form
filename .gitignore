@@ -31,3 +31,9 @@ Thumbs.db
 # Dữ liệu tạm
 *.xlsx.tmp
 exports/
+
+# Đóng gói PyInstaller
+build/
+dist/
+release/
+desktop/release-notes.md

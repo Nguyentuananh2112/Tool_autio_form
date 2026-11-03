@@ -25,6 +25,11 @@
 - `curl http://127.0.0.1:5173` thất bại; dùng `http://localhost:5173`. Proxy `/api`, `/ws` → `127.0.0.1:8765`.
 - Kiểm tra giao diện thật: chạy backend (`DATA_DIR` tạm) + `npx vite`, rồi dùng Playwright (Chromium đã cài trong `backend/.venv`) để chụp màn hình.
 
+### [ISS-007] Electron chạy như Node khi mở từ VS Code — 2026-11-03 — WORKAROUND
+- **Hiện tượng:** `npx electron .` báo `Cannot read properties of undefined (reading 'registerSchemesAsPrivileged')`.
+- **Nguyên nhân:** terminal của VS Code đặt `ELECTRON_RUN_AS_NODE=1` cho tiến trình con.
+- **Cách xử lý:** `env -u ELECTRON_RUN_AS_NODE npx electron .` (hoặc đặt biến rỗng). Người dùng mở app bình thường không bị.
+
 ### [ISS-004] Heredoc dài chứa ký tự đặc biệt làm Bash tool lỗi parse — 2026-11-02 — WORKAROUND
 - **Hiện tượng:** Một lệnh Bash tạo nhiều file bằng heredoc báo `unexpected EOF while looking for matching '`, không file nào được tạo.
 - **Bài học:** Tạo/ghi file nội dung dài bằng công cụ Write, không dồn nhiều heredoc vào một lệnh shell.

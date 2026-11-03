@@ -1,0 +1,26 @@
+{
+  "name": "auto-form",
+  "productName": "Auto-Form",
+  "version": "0.1.0",
+  "description": "Trợ lý điền khảo sát Google Form",
+  "author": "Nguyentuananh2112",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p .",
+    "start": "npm run build && electron .",
+    "dist": "npm run build && electron-builder --win --publish never",
+    "release": "npm run build && electron-builder --win --publish always"
+  },
+  "dependencies": {
+    "electron-log": "5.4.4",
+    "electron-updater": "6.8.12"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "electron": "38.8.6",
+    "electron-builder": "26.18.1",
+    "typescript": "5.9.3"
+  }
+}

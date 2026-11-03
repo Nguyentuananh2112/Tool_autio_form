@@ -29,7 +29,7 @@
 ### [SPEC-008] Mô hình triển khai: ỨNG DỤNG DESKTOP — 2026-11-02 — CHỐT
 - Người dùng chọn: mỗi user cài app trên máy mình; app kiểm tra GitHub Release, báo "Có bản mới" và nút "Cập nhật".
 - **Lệch spec có chủ đích:** PostgreSQL + Redis → SQLite nhúng (async qua `aiosqlite`) + trạng thái chiến dịch trong bộ nhớ của tiến trình backend. Backend FastAPI chạy local `127.0.0.1` như một tiến trình con (sidecar) đóng gói bằng PyInstaller; frontend React giữ nguyên.
-- Còn phải chốt: khung desktop (Electron + electron-updater hay Tauri + updater plugin). Đăng nhập: đã bỏ (SPEC-011). Gemini key: kho bảo mật Windows (SPEC-011).
+- Khung desktop: Electron + electron-updater (SPEC-019). Đăng nhập: đã bỏ (SPEC-011). Gemini key: kho bảo mật Windows (SPEC-011).
 - Ưu điểm đã cân nhắc: mỗi máy gửi form từ IP riêng, không tốn VPS.
 
 ### [SPEC-010] Bản thiết kế UI/UX v1 — 2026-11-02 — ĐÃ DUYỆT
@@ -92,6 +92,15 @@
 - Backend bổ sung cho giao diện: `GET /campaigns/{id}/distribution`, `page_history` trong nhật ký.
 - Nút cập nhật & "Mở thư mục" chỉ hoạt động khi có cầu nối desktop (`window.autoformDesktop`, Phase 5); khi chạy dev, Cài đặt ghi rõ điều đó.
 - Đã chạy app thật bằng Playwright, chụp 30+ màn hình (tour 14 bước, sáng/tối, SPSS, gửi thử, chiến dịch) → tìm và sửa BUG-005, BUG-006 và 4 lỗi giao diện nhỏ (màu link, nhãn bộ lọc SPSS, câu 2 lựa chọn lọt vào danh sách thang đo, biểu đồ chậm cập nhật).
+
+### [SPEC-019] Phase 5: Electron + GitHub Releases — 2026-11-03
+- **Chọn Electron thay Tauri:** máy dev không có Rust (Tauri cần Rust + MSVC Build Tools vài GB); `electron-updater` hỗ trợ đúng luồng artboard 5. Đổi lại bộ cài ~195 MB (Electron + Python + Playwright driver), cập nhật sau chỉ tải phần khác nhờ `.blockmap`.
+- `desktop/src/`: `backend.ts` (cổng trống + mã ngẫu nhiên, chờ /health, tắt êm qua `POST /system/shutdown`), `protocol.ts` (giao diện nạp qua `app://autoform`, chặn `../`), `window.ts` (link ngoài mở bằng trình duyệt), `updater.ts` (IPC check/download/install), `preload.ts` (contextBridge, sandbox), `main.ts`.
+- Backend đóng gói bằng PyInstaller `--onedir` (`backend/packaging/build_backend.py`), log ra `%APPDATA%\Auto-Form\logs\backend.log`; log vỏ desktop ở `%APPDATA%\Auto-Form\logs\main.log`.
+- Tắt êm trên Windows: `system/shutdown` → `signal.raise_signal(SIGINT)` → uvicorn chạy lifespan → chiến dịch chuyển PAUSED. Đã kiểm với file .exe thật.
+- CI (`ci.yml`): backend (Windows), frontend, desktop. Release (`release.yml`): tag `vX.Y.Z` phải khớp `desktop/package.json`, ghi chú lấy từ `CHANGELOG.md`, `electron-builder --publish always` dùng `GITHUB_TOKEN`.
+- Repo **Public** → app tải bản cập nhật không cần token. Nếu chuyển Private phải cấp token cho từng máy (không khuyến nghị).
+- Đã kiểm: bản dev và bản đóng gói (`win-unpacked`) đều mở được, gọi backend .exe qua `app://` + token, chụp màn hình, tắt êm.
 
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.

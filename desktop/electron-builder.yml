@@ -1,0 +1,31 @@
+# Đóng gói bộ cài Windows + phát hành lên GitHub Releases (electron-updater đọc latest.yml ở đó)
+appId: com.autoform.desktop
+productName: Auto-Form
+copyright: Copyright © 2026 Nguyentuananh2112
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - package.json
+extraResources:
+  # Giao diện React đã build (frontend/dist) và backend đã đóng gói (backend/dist/autoform-backend)
+  - from: ../frontend/dist
+    to: renderer
+  - from: ../backend/dist/autoform-backend
+    to: backend
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: Auto-Form-Setup-${version}.${ext}
+nsis:
+  oneClick: true
+  perMachine: false # cài cho người dùng hiện tại, không cần quyền quản trị
+  deleteAppDataOnUninstall: false # giữ dữ liệu khảo sát khi gỡ/cài lại
+  shortcutName: Auto-Form
+publish:
+  provider: github
+  owner: Nguyentuananh2112
+  repo: Tool_autio_form
+  releaseType: release
