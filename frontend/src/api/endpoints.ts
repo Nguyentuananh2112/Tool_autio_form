@@ -10,7 +10,7 @@ import type {
 } from '@/types/campaign';
 import type { ColumnMapping, ExcelConvertResponse, ExcelPreview } from '@/types/excel';
 import type { FormDetail, FormSummary } from '@/types/form';
-import type { AppSettingsRead, GeneratePoolRequest } from '@/types/settings';
+import type { AppSettingsRead, BrowserStatus, GeneratePoolRequest } from '@/types/settings';
 
 import { api, request } from './client';
 
@@ -45,6 +45,8 @@ export const settingsApi = {
   get: () => request(() => api.get<AppSettingsRead>('/settings')),
   saveGeminiKey: (apiKey: string) => request(() => api.put<void>('/settings/gemini-key', { api_key: apiKey })),
   deleteGeminiKey: () => request(() => api.delete<void>('/settings/gemini-key')),
+  browserStatus: () => request(() => api.get<BrowserStatus>('/system/browser', { timeout: 90_000 })),
+  installBrowser: () => request(() => api.post<BrowserStatus>('/system/browser/install')),
 };
 
 export interface PreviewPayload {

@@ -26,7 +26,7 @@ export const TERMS: { term: string; text: string }[] = [
   { term: 'Thang đo Likert', text: 'Câu chọn mức độ, VD 1 = Rất không đồng ý … 5 = Rất đồng ý.' },
   { term: 'Tương quan (r)', text: 'Mức các câu trong nhóm “đi cùng nhau”: người chọn cao ở câu này cũng có xu hướng chọn cao ở câu kia.' },
   { term: 'Mục khác', text: 'Ô “Khác” cho người trả lời tự gõ; cần có danh sách câu trả lời mẫu nếu đặt tỷ lệ lớn hơn 0%.' },
-  { term: 'Trình duyệt dự phòng', text: 'Khi form từ chối dữ liệu gửi trực tiếp, app mở một trình duyệt ẩn để điền và bấm Gửi giống người dùng.' },
+  { term: 'Trình duyệt dự phòng', text: 'Khi form từ chối dữ liệu gửi trực tiếp, app mở một trình duyệt ẩn để điền và bấm Gửi giống người dùng. Cần tải một lần trong Cài đặt.' },
 ];
 
 export const FAQS: { q: string; a: string }[] = [

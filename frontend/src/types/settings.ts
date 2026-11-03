@@ -14,6 +14,14 @@ export interface GeneratePoolRequest {
   persona?: string;
 }
 
+export interface BrowserStatus {
+  installed: boolean;
+  installing: boolean;
+  percent: number | null;
+  detail: string | null;
+  error: string | null;
+}
+
 export interface ApiErrorBody {
   message: string;
   errors: string[];

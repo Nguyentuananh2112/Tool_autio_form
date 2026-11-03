@@ -1,6 +1,7 @@
 import { settingsApi } from '@/api/endpoints';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { AppearanceSection } from '@/components/settings/AppearanceSection';
+import { BrowserSection } from '@/components/settings/BrowserSection';
 import { DataSection } from '@/components/settings/DataSection';
 import { GeminiKeySection } from '@/components/settings/GeminiKeySection';
 import { UpdateSection } from '@/components/settings/UpdateSection';
@@ -16,6 +17,7 @@ export function SettingsPage() {
       <ErrorAlert error={settings.error} />
       <GeminiKeySection settings={settings.data} onSaved={() => void settings.reload()} />
       <UpdateSection version={version} />
+      <BrowserSection />
       <AppearanceSection />
       <DataSection settings={settings.data} />
     </div>

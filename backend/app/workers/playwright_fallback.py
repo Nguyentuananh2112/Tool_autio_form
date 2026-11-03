@@ -66,7 +66,7 @@ class PlaywrightSubmitter:
         except PlaywrightError as exc:
             await self.close()
             raise FallbackUnavailableError(
-                "Chưa tải trình duyệt Chromium. Bật lại tính năng trong Cài đặt để tải (~150 MB)."
+                "Chưa tải trình duyệt dự phòng. Vào Cài đặt → Trình duyệt dự phòng → Tải trình duyệt."
             ) from exc
 
     async def close(self) -> None:

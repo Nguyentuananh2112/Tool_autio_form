@@ -44,7 +44,7 @@ export function RunSettingsPanel({ form, readiness }: { form: FormDetail; readin
             <Field label="Proxy của mạng bạn (nếu cần)" htmlFor={proxyId} hint="Nếu Google giới hạn số lần gửi, app sẽ tự giãn nhịp và tạm dừng để bạn quyết định.">
               <TextInput id={proxyId} value={config.proxy} placeholder="http://user:pass@ip:port" className="font-mono text-[13px]" onChange={(e) => patch(form.id, { proxy: e.target.value })} />
             </Field>
-            <Switch label="Dùng trình duyệt cho form kiểm tra dữ liệu phức tạp" description="Tải Chromium (~150 MB) lần đầu dùng" checked={config.useFallback} onChange={(useFallback) => patch(form.id, { useFallback })} />
+            <Switch label="Dùng trình duyệt cho form kiểm tra dữ liệu phức tạp" description="Cần tải trình duyệt một lần trong Cài đặt → Trình duyệt dự phòng" checked={config.useFallback} onChange={(useFallback) => patch(form.id, { useFallback })} />
           </div>
         </details>
       )}

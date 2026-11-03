@@ -18,9 +18,11 @@
 - Bộ cài không có chứng chỉ code-signing sẽ hiện cảnh báo "Windows protected your PC" cho cả 40–50 user, và có thể bị antivirus nghi ngờ (đặc biệt app tự tải bản cập nhật).
 - **Giảm thiểu:** hướng dẫn "More info → Run anyway" trong tài liệu; cân nhắc mua chứng chỉ code-signing hoặc dùng Azure Trusted Signing.
 
-### [RISK-012] Bản cài chưa có nút tải Chromium cho trình duyệt dự phòng — OPEN
-- Bản đóng gói có driver Playwright nhưng KHÔNG có Chromium; khi form cần trình duyệt dự phòng, nhật ký sẽ ghi "Chưa tải trình duyệt Chromium" và phản hồi đó tính là lỗi.
-- **Cần làm:** endpoint tải Chromium bằng driver đi kèm (`playwright._impl._driver`) + nút trong Cài đặt; kiểm cùng RISK-010.
+### [RISK-012] Bản cài chưa có nút tải Chromium cho trình duyệt dự phòng — FIXED 2026-11-03
+- `services/browser_installer.py` chạy driver Node đi kèm Playwright: `install --only-shell chromium` (Chrome Headless Shell ~118 MB, đủ vì app luôn chạy ẩn), đọc tiến độ từ dòng xuất, kiểm tra cài xong bằng file `INSTALLATION_COMPLETE` ở các "Install location" của `--dry-run`.
+- API `GET /system/browser`, `POST /system/browser/install`; mục **Trình duyệt dự phòng** trong Cài đặt có nút tải + thanh tiến độ.
+- Đã kiểm thật: tải bằng Python (29 giây) và bằng **bản .exe đóng gói** vào thư mục trống (~17 giây) → `installed: true`.
+- Subprocess chạy trong luồng riêng (`asyncio.to_thread` + `Popen`) vì vòng lặp của uvicorn trên Windows có thể không hỗ trợ subprocess async; `CREATE_NO_WINDOW` để không bật cửa sổ đen.
 
 ### [RISK-006] Dung lượng bộ cài khi kèm Python + Playwright Chromium — OPEN
 - PyInstaller backend (~80–150MB) + Chromium (~150MB+) làm bộ cài và mỗi lần cập nhật rất nặng.
