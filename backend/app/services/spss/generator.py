@@ -6,17 +6,22 @@ Module thuần CPU: trong code async hãy gọi qua `await asyncio.to_thread(gen
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from app.schemas.campaign_schema import QuestionRuleConfig, SpssGroupConfig, SpssGroupPreview
 from app.schemas.form_schema import ParsedFormStructure, ParsedQuestion
+from app.schemas.logic_schema import LogicMap
 from app.services.spss.answers import Answer, GeneratedResponse
 from app.services.spss.columns import Column, ColumnBuilder, TextMutator
 from app.services.spss.group_plan import GroupPlan, plan_group
 from app.services.spss.page_navigator import PageNavigator
 from app.services.spss.preview import build_group_preview
 from app.services.spss.validation import GeneratorConfigError, validate_question
+
+if TYPE_CHECKING:
+    from app.services.logic.plan import FilterStats, LogicPlan
 
 
 class SurveyDataGenerator:
@@ -28,6 +33,7 @@ class SurveyDataGenerator:
         *,
         seed: int | None = None,
         text_mutator: TextMutator | None = None,
+        logic: LogicMap | None = None,
     ) -> None:
         self.structure = structure
         rule_list = list(rules.values()) if isinstance(rules, Mapping) else list(rules or [])
@@ -39,6 +45,13 @@ class SurveyDataGenerator:
         self._navigator = PageNavigator(structure)
         self._plans: list[GroupPlan] | None = None
         self.warnings: list[str] = []
+        self._logic: LogicPlan | None = None
+        if logic is not None:
+            from app.services.logic.plan import LogicPlan  # tránh vòng import spss ↔ logic
+
+            self._logic = LogicPlan(structure, logic, self._rules)
+        # Kết quả lượt soát cuối cùng của generate() (None nếu không soát logic)
+        self.filter_stats: FilterStats | None = None
 
     def _plan_groups(self, errors: list[str]) -> tuple[list[GroupPlan], dict[str, str]]:
         grouped: dict[str, str] = {}
@@ -83,12 +96,26 @@ class SurveyDataGenerator:
     def generate(self, n: int, *, start_sequence: int = 1) -> list[GeneratedResponse]:
         if n < 1:
             raise ValueError("Số mẫu cần sinh phải >= 1")
+        if self._logic is None:
+            responses = self._generate_raw(n)
+        else:
+            responses, self.filter_stats = self._logic.select(self._generate_raw, n, self._columns.rng)
+        for offset, response in enumerate(responses):
+            response.sequence_number = start_sequence + offset
+        return responses
+
+    def _generate_raw(self, n: int) -> list[GeneratedResponse]:
+        logic = self._logic
+        factors = logic.factors(n, self._columns.rng) if logic else {}
         columns: dict[str, Column] = {}
         for plan in self._ensure_plans():
-            columns.update(self._columns.for_group(plan, n))
+            shared = logic.shared_for(plan, factors) if logic else None
+            columns.update(self._columns.for_group(plan, n, shared, logic.loading if logic else 0.0))
         for question in self.structure.questions:
             if question.entry_id not in columns:
-                columns[question.entry_id] = self._columns.for_question(question, self._rules.get(question.entry_id), n)
+                columns[question.entry_id] = self._columns.for_question(
+                    question, self._rules.get(question.entry_id), n, logic.input_for(question, factors) if logic else None
+                )
 
         ordered_entries = [q.entry_id for q in self.structure.questions]
         responses: list[GeneratedResponse] = []
@@ -96,10 +123,12 @@ class SurveyDataGenerator:
             raw: dict[str, Answer] = {
                 entry_id: answer for entry_id in ordered_entries if (answer := columns[entry_id][i]) is not None
             }
+            if logic is not None:
+                logic.repair(raw, self._columns.rng)
             pages = self._navigator.page_history(raw)
             visited = set(pages)
             answers = {e: a for e, a in raw.items() if self._questions[e].page_index in visited}
-            responses.append(GeneratedResponse(sequence_number=start_sequence + i, answers=answers, page_history=pages))
+            responses.append(GeneratedResponse(sequence_number=i + 1, answers=answers, page_history=pages))
         return responses
 
     def build_page_history(self, answers: Mapping[str, Answer]) -> list[int]:
@@ -126,8 +155,11 @@ def generate_responses(
     *,
     seed: int | None = None,
     text_mutator: TextMutator | None = None,
+    logic: LogicMap | None = None,
 ) -> list[GeneratedResponse]:
-    return SurveyDataGenerator(structure, rules, spss_groups, seed=seed, text_mutator=text_mutator).generate(n)
+    return SurveyDataGenerator(
+        structure, rules, spss_groups, seed=seed, text_mutator=text_mutator, logic=logic
+    ).generate(n)
 
 
 def preview_spss(

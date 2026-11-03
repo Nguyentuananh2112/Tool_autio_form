@@ -118,9 +118,25 @@ def plan_group(
     )
 
 
-def sample_group_codes(plan: GroupPlan, n: int, rng: np.random.Generator) -> np.ndarray:
-    """Mẫu Likert cùng chiều (chưa đảo item ngược) kích thước (n, k) — Mục 5.2.B bước 3–4."""
+def sample_group_codes(
+    plan: GroupPlan,
+    n: int,
+    rng: np.random.Generator,
+    shared: np.ndarray | None = None,
+    loading: float = 0.0,
+) -> np.ndarray:
+    """Mẫu Likert cùng chiều (chưa đảo item ngược) kích thước (n, k) — Mục 5.2.B bước 3–4.
+
+    `shared`: nhân tố thái độ chung (soát logic). Nhân tố riêng của nhóm G = √λ·shared + √(1−λ)·u
+    vẫn ~ N(0, 1), nên trung bình, độ lệch chuẩn và tương quan trong nhóm (alpha) giữ nguyên.
+    """
     k = len(plan.questions)
+    if shared is not None:
+        group_factor = np.sqrt(loading) * shared + np.sqrt(1.0 - loading) * rng.standard_normal(n)
+        noise = rng.standard_normal((n, k))
+        r = plan.latent_r
+        raw_samples = plan.latent_mean + plan.latent_std * (np.sqrt(r) * group_factor[:, None] + np.sqrt(1.0 - r) * noise)
+        return np.clip(np.round(raw_samples), plan.lo, plan.hi).astype(int)
     variance = plan.latent_std**2
     mean_vec = np.full(k, plan.latent_mean)
     cov_matrix = np.full((k, k), plan.latent_r * variance)

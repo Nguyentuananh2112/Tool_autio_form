@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 from datetime import date, time, timedelta
 
 import numpy as np
 
 from app.schemas.campaign_schema import QuestionRuleConfig, RuleStrategy
 from app.schemas.form_schema import OTHER_OPTION_VALUE, ParsedQuestion, QuestionType
+from app.schemas.logic_schema import AttitudeItem, TextSentiment
+from app.services.logic.attitude import copula_picks, item_latent, pool_for, sentiment_of
+from app.services.logic.ordering import ordered_values
 from app.services.spss.answers import ANSWER_KIND_CHOICE, ANSWER_KIND_DATE, ANSWER_KIND_TEXT, ANSWER_KIND_TIME, Answer
 from app.services.spss.group_plan import GroupPlan, sample_group_codes
 from app.services.spss.scales import numeric_codes
@@ -22,14 +26,31 @@ DEFAULT_TIME_START = time(8, 0)
 DEFAULT_TIME_END = time(21, 0)
 
 
+@dataclass(slots=True)
+class LogicInput:
+    """Phần soát logic áp lên một câu: thái độ chung của nhóm và ô loại trừ."""
+
+    factor: np.ndarray | None = None  # nhân tố thái độ (n,) của nhóm chứa câu này
+    loading: float = 0.0
+    item: AttitudeItem | None = None  # câu lựa chọn thuộc nhóm thái độ
+    text_labels: dict[str, TextSentiment] | None = None  # câu tự luận chọn câu mẫu theo thái độ
+    exclusive: frozenset[str] = field(default_factory=frozenset)
+
+
 class ColumnBuilder:
     def __init__(self, rng: np.random.Generator, text_mutator: TextMutator | None = None) -> None:
         self._rng = rng
         self._text_mutator = text_mutator
 
     # ---------------------------------------------------------------- entry
-    def for_group(self, plan: GroupPlan, n: int) -> dict[str, Column]:
-        codes = sample_group_codes(plan, n, self._rng)
+    @property
+    def rng(self) -> np.random.Generator:
+        return self._rng
+
+    def for_group(
+        self, plan: GroupPlan, n: int, shared: np.ndarray | None = None, loading: float = 0.0
+    ) -> dict[str, Column]:
+        codes = sample_group_codes(plan, n, self._rng, shared, loading)
         columns: dict[str, Column] = {}
         for j, question in enumerate(plan.questions):
             column = codes[:, j]
@@ -41,7 +62,9 @@ class ColumnBuilder:
             ]
         return columns
 
-    def for_question(self, question: ParsedQuestion, rule: QuestionRuleConfig | None, n: int) -> Column:
+    def for_question(
+        self, question: ParsedQuestion, rule: QuestionRuleConfig | None, n: int, logic: LogicInput | None = None
+    ) -> Column:
         strategy = rule.strategy if rule else RuleStrategy.AUTO
         if strategy == RuleStrategy.SKIP:
             return [None] * n
@@ -51,14 +74,14 @@ class ColumnBuilder:
 
         mask = self._answer_mask(question, rule, n)
         if question.is_text:
-            return self._text(rule, mask)
+            return self._text(rule, mask, logic)
         if question.type_id == QuestionType.DATE:
             return self._date(rule, mask)
         if question.type_id == QuestionType.TIME:
             return self._time(rule, mask)
         if question.is_multi_select:
-            return self._checkbox(question, rule, mask)
-        return self._single_choice(question, rule, mask)
+            return self._checkbox(question, rule, mask, logic.exclusive if logic else frozenset())
+        return self._single_choice(question, rule, mask, logic)
 
     # -------------------------------------------------------------- helpers
     def _answer_mask(self, question: ParsedQuestion, rule: QuestionRuleConfig | None, n: int) -> np.ndarray:
@@ -73,13 +96,23 @@ class ColumnBuilder:
         return text
 
     # ---------------------------------------------------------------- types
-    def _single_choice(self, question: ParsedQuestion, rule: QuestionRuleConfig | None, mask: np.ndarray) -> Column:
+    def _single_choice(
+        self, question: ParsedQuestion, rule: QuestionRuleConfig | None, mask: np.ndarray, logic: LogicInput | None
+    ) -> Column:
         n = mask.size
         options, weights = resolve_weights(question, rule)
         total = weights.sum()
         if total <= 0:
             return [None] * n
-        picks = self._rng.choice(len(options), size=n, p=weights / total)
+        if logic is not None and logic.item is not None and logic.factor is not None:
+            index_of = {option.value: i for i, option in enumerate(options)}
+            ordered_index = [index_of[value] for value in ordered_values(question, logic.item)]
+            latent = item_latent(logic.factor, logic.loading, self._rng)
+            picks = copula_picks(options, weights, ordered_index, latent, self._rng)
+            if picks is None:
+                return [None] * n
+        else:
+            picks = self._rng.choice(len(options), size=n, p=weights / total)
         codes = numeric_codes(question)
         other_pool = rule.other_text_pool if rule else []
 
@@ -98,7 +131,9 @@ class ColumnBuilder:
                 column.append(Answer(values=[option.value], numeric_value=codes.get(option.value)))
         return column
 
-    def _checkbox(self, question: ParsedQuestion, rule: QuestionRuleConfig | None, mask: np.ndarray) -> Column:
+    def _checkbox(
+        self, question: ParsedQuestion, rule: QuestionRuleConfig | None, mask: np.ndarray, exclusive: frozenset[str]
+    ) -> Column:
         n = mask.size
         options, probabilities = resolve_weights(question, rule)
         k = len(options)
@@ -128,6 +163,7 @@ class ColumnBuilder:
                 chosen.extend(remaining[: min_checked - len(chosen)])
             if len(chosen) > max_checked:
                 chosen = list(self._rng.choice(chosen, size=max_checked, replace=False))
+            chosen = self._resolve_exclusive(options, chosen, exclusive, min_checked)
             if not chosen:
                 column.append(None)
                 continue
@@ -136,11 +172,28 @@ class ColumnBuilder:
             column.append(Answer(values=[options[j].value for j in chosen_sorted], other_text=other_text))
         return column
 
-    def _text(self, rule: QuestionRuleConfig | None, mask: np.ndarray) -> Column:
+    def _resolve_exclusive(self, options, chosen: list, exclusive: frozenset[str], min_checked: int) -> list:
+        """Ô loại trừ không đi kèm ô khác: giữ riêng nó (xác suất 1/số ô) hoặc bỏ nó đi."""
+        hits = [j for j in chosen if options[j].value in exclusive]
+        if not hits or len(chosen) == 1:
+            return chosen
+        if min_checked <= 1 and self._rng.uniform() < 1.0 / len(chosen):
+            return [hits[0]]
+        return [j for j in chosen if options[j].value not in exclusive]
+
+    def _text(self, rule: QuestionRuleConfig | None, mask: np.ndarray, logic: LogicInput | None) -> Column:
         pool = rule.text_pool if rule else []
         if not pool:
             return [None] * mask.size
-        return [Answer(values=[self.pick_text(pool)], kind=ANSWER_KIND_TEXT) if mask[i] else None for i in range(mask.size)]
+        if logic is None or logic.text_labels is None or logic.factor is None:
+            return [Answer(values=[self.pick_text(pool)], kind=ANSWER_KIND_TEXT) if mask[i] else None for i in range(mask.size)]
+        labels = logic.text_labels
+        pools = {sentiment: pool_for(pool, labels, sentiment) for sentiment in TextSentiment}
+        return [
+            Answer(values=[self.pick_text(pools[sentiment_of(float(logic.factor[i]))])], kind=ANSWER_KIND_TEXT)
+            if mask[i] else None
+            for i in range(mask.size)
+        ]
 
     def _date(self, rule: QuestionRuleConfig | None, mask: np.ndarray) -> Column:
         end = rule.date_end if rule and rule.date_end else date.today()
