@@ -104,3 +104,14 @@
 
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.
+
+### [SPEC-020] Soát logic bằng AI + chuỗi API key Gemini — 2026-11-03 — CHỜ DUYỆT THIẾT KẾ (màn 11, 12)
+- **Bối cảnh:** ISS-008, quy tắc 6 trong CLAUDE.md.
+- **Đã chốt với người dùng:**
+  - Lượt 1 (đọc toàn bộ câu hỏi) **chỉ dùng AI** (Gemini), không có chế độ quy tắc từ khoá thay thế.
+  - Độ đồng đều trong một người: mặc định **"Vừa phải"** (đa số lệch ≤ 1 điểm, thỉnh thoảng 2), có thanh trượt.
+  - Chuỗi key, thử theo thứ tự: key riêng người dùng → key chung của app → 1 key dự phòng → hộp thoại "Hết lượt AI" để dán key riêng. Không tạo nhiều tài khoản miễn phí để lách giới hạn (vi phạm điều khoản Google).
+  - Key chung + key dự phòng **nhúng lúc build từ GitHub Secrets**, không bao giờ nằm trong mã nguồn. Người dùng phải giới hạn key chỉ gọi Gemini API, đặt hạn mức chi tiêu, và dùng key riêng cho app.
+  - Hết mọi key / mất mạng → **dừng, chờ dán key** (không soát thay thế).
+- **Rủi ro:** repo công khai nên ai cũng tải được file cài đặt và có thể trích key ra; thiệt hại bị chặn bởi hạn mức chi tiêu.
+- **Lưu ý:** gói Google AI Pro (chat) KHÔNG kèm quota API; key phải tạo ở AI Studio.
