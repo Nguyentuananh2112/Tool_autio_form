@@ -11,6 +11,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { FormsPage } from '@/pages/FormsPage';
 import { FormWorkspacePage } from '@/pages/FormWorkspacePage';
 import { HelpPage } from '@/pages/HelpPage';
+import { LogicReviewPage } from '@/pages/LogicReviewPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 
 export function AppRoutes() {
@@ -19,6 +20,7 @@ export function AppRoutes() {
       <Route path="/" element={<DashboardPage />} />
       <Route path="/forms" element={<FormsPage />} />
       <Route path="/forms/:formId" element={<FormWorkspacePage />} />
+      <Route path="/forms/:formId/logic" element={<LogicReviewPage />} />
       <Route path="/campaigns" element={<CampaignListPage />} />
       <Route path="/campaigns/:campaignId" element={<CampaignDetailPage />} />
       <Route path="/help" element={<HelpPage />} />

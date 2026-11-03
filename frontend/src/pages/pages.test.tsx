@@ -42,11 +42,11 @@ describe('các màn hình chính vẽ được với dữ liệu thật', () => 
     await waitFor(() => expect(screen.getAllByText('Form thử').length).toBeGreaterThan(0));
   });
 
-  it('Cấu hình: chế độ tập dùng, thẻ rẽ nhánh và nút Bắt đầu bị khóa khi thiếu câu mẫu', async () => {
+  it('Cấu hình: chế độ tập dùng, thẻ rẽ nhánh và nút sang Soát logic bị khóa khi thiếu câu mẫu', async () => {
     renderAt('/forms/f1', <FormWorkspacePage />, '/forms/:formId');
     expect(await screen.findByText(/Chế độ tập dùng/)).toBeInTheDocument();
     expect(screen.getByText('Rẽ nhánh')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Bắt đầu chạy/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Tiếp: Soát logic/ })).toBeDisabled();
     expect(screen.getByText(/1 câu chưa cấu hình xong/)).toBeInTheDocument();
   });
 

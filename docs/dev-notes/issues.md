@@ -34,7 +34,7 @@
 - **Hiện tượng:** Một lệnh Bash tạo nhiều file bằng heredoc báo `unexpected EOF while looking for matching '`, không file nào được tạo.
 - **Bài học:** Tạo/ghi file nội dung dài bằng công cụ Write, không dồn nhiều heredoc vào một lệnh shell.
 
-### [ISS-008] Câu trả lời giữa các câu không logic với nhau (mọi form) — 2026-11-03 — OPEN
+### [ISS-008] Câu trả lời giữa các câu không logic với nhau (mọi form) — 2026-11-03 — FIXED (SPEC-020)
 - **Phát hiện bởi:** người dùng + đo trên 100 phản hồi thật (bản sao form Tiki).
 - **Nguyên nhân gốc:** bộ sinh tạo TỪNG CỘT độc lập; chỉ các câu trong cùng nhóm SPSS mới liên hệ nhau, giữa các nhóm và với câu lẻ là ngẫu nhiên hoàn toàn.
 - **Số đo (n = 68 người đi nhánh C):**
@@ -45,4 +45,4 @@
   - Ô loại trừ: C8 "Không có đặc điểm nổi bật nào" chọn kèm ô khác 36/36 lần; E8 "Không có liên tưởng cụ thể" 8/8.
   - Thương hiệu: sàn nghĩ đến đầu tiên (B4) trùng sàn chọn duy nhất (B5) chỉ 7/68; "Hiếm khi mua Tiki" nhưng chọn Tiki là sàn duy nhất (3).
   - Câu tự luận chọn ngẫu nhiên, không theo thái độ (VD "Đáng tin cậy, chuyên nghiệp" với điểm C10 TB 2,8).
-- **Hướng xử lý:** xem đề xuất "Soát logic" (chờ duyệt thiết kế theo quy tắc 1).
+- **Đã xử lý:** bước Soát logic (màn 11–12, SPEC-020): AI đọc câu hỏi → sinh theo thái độ chung (Gaussian copula giữ tỷ lệ) → sửa tại chỗ câu mâu thuẫn → bắt buộc xác nhận trước khi chạy. Số đo sau sửa: xem checks.md 2026-11-03.

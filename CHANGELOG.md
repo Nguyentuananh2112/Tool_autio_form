@@ -10,3 +10,5 @@ Viết bằng lời thường cho người dùng, mỗi dòng một thay đổi.
 - Gửi theo lịch "Rải đều tự nhiên" hoặc "Tốc độ tối đa", tạm dừng / tiếp tục, tự giãn nhịp khi Google giới hạn.
 - Theo dõi chiến dịch trực tiếp và xuất dữ liệu ra Excel cho SPSS.
 - Chế độ tập dùng với form mẫu và tour hướng dẫn cho người mới.
+- Bước Soát logic bắt buộc trước khi chạy: AI đọc toàn bộ câu hỏi để câu trả lời của mỗi người khớp nhau (các câu đánh giá "sàn sàn" nhau, tuổi – nghề nghiệp hợp lý, ô "Không có…" không chọn kèm ô khác…), soát thử 200 phản hồi trong máy trước khi gửi.
+- App có sẵn key Gemini chung; hết lượt thì app hỏi bạn dán API key riêng rồi chạy tiếp.

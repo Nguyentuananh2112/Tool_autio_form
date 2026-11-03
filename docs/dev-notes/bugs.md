@@ -77,7 +77,7 @@
 - **Cách xử lý:** mặc định dùng bí danh `gemini-flash-latest` (luôn trỏ model Flash mới nhất); `services/gemini_call.generate_json` gặp 404 / quá tải kéo dài (503) thì tự chuyển model dự phòng (`gemini-flash-latest` → `gemini-flash-lite-latest`), lỗi 5xx thử lại tăng dần.
 - **Bài học:** Không đặt cứng tên model có số phiên bản; mọi lời gọi AI đi qua một chỗ có thử lại + model dự phòng.
 
-### [BUG-016] Suýt đưa một phần API key thật vào file test — 2026-11-03 — FIXED (chưa commit)
+### [BUG-016] Suýt đưa một phần API key thật vào file test — 2026-11-03 — FIXED (chưa từng được commit)
 - **Phát hiện bởi:** bộ kiểm tra an toàn chặn lệnh `git add -A`.
 - **Cách xử lý:** thay bằng key giả `AQ.FakeKeyOnlyForTests-000`, xoá `.pytest_cache`/`__pycache__` còn giữ chuỗi; quét lại toàn repo chỉ còn `backend/.env` (đã gitignore).
 - **Bài học:** Dữ liệu test cho key LUÔN là chuỗi giả. Trước commit: `grep` tiền tố key thật trên toàn repo; add file theo đường dẫn, không `git add -A` khi vừa làm việc với bí mật.

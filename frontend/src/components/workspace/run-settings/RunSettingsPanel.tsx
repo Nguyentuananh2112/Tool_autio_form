@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { ErrorAlert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +18,7 @@ export function RunSettingsPanel({ form, readiness }: { form: FormDetail; readin
   const config = useFormConfig(form.id);
   const patch = useFormConfigStore((s) => s.patchConfig);
   const actions = useCampaignActions(form.id, form.title, config);
+  const navigate = useNavigate();
   const [previewOnly, setPreviewOnly] = useState(false);
   const targetId = useId();
   const nameId = useId();
@@ -61,9 +63,16 @@ export function RunSettingsPanel({ form, readiness }: { form: FormDetail; readin
         <Button onClick={() => void actions.runTrial(previewOnly || form.is_demo)} loading={actions.busy === 'trial'}>
           {form.is_demo || previewOnly ? 'Xem trước 1 phản hồi' : 'Gửi thử 1 phản hồi'}
         </Button>
-        <Button variant="primary" size="lg" disabled={blocked} loading={actions.busy === 'start'} onClick={() => void actions.start()}>
-          Bắt đầu chạy {target} phản hồi
-        </Button>
+        {excelMode ? (
+          <Button variant="primary" size="lg" disabled={blocked} loading={actions.busy === 'start'} onClick={() => void actions.start()}>
+            Bắt đầu chạy {target} phản hồi
+          </Button>
+        ) : (
+          // Quy tắc 6: dữ liệu tự sinh phải qua bước Soát logic trước khi chạy
+          <Button variant="primary" size="lg" disabled={blocked} onClick={() => navigate(`/forms/${form.id}/logic`)}>
+            Tiếp: Soát logic ({target} phản hồi)
+          </Button>
+        )}
         {blocked && <span className="text-center text-xs text-muted">Hoàn tất các câu còn thiếu để bắt đầu.</span>}
       </div>
       <TrialResultDialog result={actions.trial} onClose={actions.clearTrial} />

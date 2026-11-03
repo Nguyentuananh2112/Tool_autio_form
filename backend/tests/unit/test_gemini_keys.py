@@ -147,16 +147,33 @@ async def _no_sleep(_: float) -> None:
     return None
 
 
-async def test_qua_tai_thu_lai_roi_thanh_cong() -> None:
-    client, models = _client([_api_error(503), "ok"])
+async def test_truc_trac_ngan_500_thu_lai_cung_model() -> None:
+    client, models = _client([_api_error(500), "ok"])
     assert await generate_json(client, "m", "p", dict, temperature=0, sleep=_no_sleep) == "ok"
     assert models.models == ["m", "m"]
 
 
-async def test_qua_tai_keo_dai_chuyen_model_du_phong() -> None:
-    client, models = _client([_api_error(503)] * 4 + ["ok"])
+async def test_qua_tai_503_chuyen_ngay_model_du_phong() -> None:
+    """Đo thật: khi Flash quá tải mỗi lần 503 mất 10–100 giây → không thử lại cùng model."""
+    client, models = _client([_api_error(503), "ok"])
     assert await generate_json(client, "m", "p", dict, temperature=0, sleep=_no_sleep) == "ok"
-    assert models.models == ["m"] * 4 + [FALLBACK_MODELS[0]]
+    assert models.models == ["m", FALLBACK_MODELS[0]]
+
+
+async def test_khong_tra_loi_qua_han_chuyen_model_du_phong() -> None:
+    import asyncio
+
+    calls: list[str] = []
+
+    async def generate_content(*, model: str, contents: str, config: Any) -> Any:
+        calls.append(model)
+        if len(calls) == 1:
+            await asyncio.sleep(5)
+        return "ok"
+
+    client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)))
+    assert await generate_json(client, "m", "p", dict, temperature=0, sleep=_no_sleep, timeout=0.05) == "ok"
+    assert calls == ["m", FALLBACK_MODELS[0]]
 
 
 async def test_model_ngung_ho_tro_404_chuyen_ngay() -> None:

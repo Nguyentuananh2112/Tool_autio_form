@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 
 import { cn } from '@/lib/cn';
 
-const STEPS = ['Phân tích form', 'Cấu hình câu trả lời', 'Chạy & theo dõi'];
+const STEPS = ['Phân tích form', 'Cấu hình câu trả lời', 'Soát logic', 'Chạy & theo dõi'];
 
-/** Thanh 3 bước ① Phân tích → ② Cấu hình → ③ Chạy (artboard 2, quy tắc 4). */
-export function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
+/** Thanh 4 bước ① Phân tích → ② Cấu hình → ③ Soát logic → ④ Chạy (artboard 2 + 11, quy tắc 4 & 6). */
+export function StepIndicator({ current }: { current: 1 | 2 | 3 | 4 }) {
   return (
     <ol aria-label="Các bước" data-tour="steps" className="m-0 flex list-none flex-wrap items-center gap-2 self-start rounded-[10px] bg-surface p-0 px-3 py-2 text-[13px]">
       {STEPS.map((label, index) => {

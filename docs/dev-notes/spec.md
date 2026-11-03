@@ -105,7 +105,7 @@
 ### [SPEC-007] Yêu cầu bổ sung của người dùng — 2026-11-02
 - UI/UX thiết kế trước; phát hành qua GitHub + Actions; thông báo & nút cập nhật; cấm God Component; duy trì dev-notes. Chi tiết trong `CLAUDE.md`.
 
-### [SPEC-020] Soát logic bằng AI + chuỗi API key Gemini — 2026-11-03 — CHỜ DUYỆT THIẾT KẾ (màn 11, 12)
+### [SPEC-020] Soát logic bằng AI + chuỗi API key Gemini — 2026-11-03 — ĐÃ LÀM (màn 11, 12 đã duyệt)
 - **Bối cảnh:** ISS-008, quy tắc 6 trong CLAUDE.md.
 - **Đã chốt với người dùng:**
   - Lượt 1 (đọc toàn bộ câu hỏi) **chỉ dùng AI** (Gemini), không có chế độ quy tắc từ khoá thay thế.
@@ -115,3 +115,7 @@
   - Hết mọi key / mất mạng → **dừng, chờ dán key** (không soát thay thế).
 - **Rủi ro:** repo công khai nên ai cũng tải được file cài đặt và có thể trích key ra; thiệt hại bị chặn bởi hạn mức chi tiêu.
 - **Lưu ý:** gói Google AI Pro (chat) KHÔNG kèm quota API; key phải tạo ở AI Studio.
+- **Cài đặt:** `services/logic/*` (ordering, attitude, checker, repair, plan, ai_reader, text_classifier, review, validation), `services/gemini_keys.py`, `services/gemini_call.py`, `api/logic_router.py`; giao diện `pages/LogicReviewPage.tsx`, `components/logic/*`, `hooks/useLogicReview.ts`.
+- **Lệch so với thiết kế:** lượt 3 SỬA TẠI CHỖ câu mâu thuẫn thay vì bỏ cả phản hồi (bỏ cả phản hồi làm lệch tỷ lệ — checks.md). Dữ liệu Excel là dữ liệu thật nên không bắt buộc soát.
+- **Key:** `GEMINI_SHARED_KEY` đã lưu vào GitHub Secrets (2026-11-03); `GEMINI_BACKUP_KEY` chưa có (tuỳ chọn).
+- **AI:** mặc định `gemini-flash-latest`; quá tải (503) hoặc quá 45 giây → chuyển ngay `gemini-flash-lite-latest` (đo thật: Flash quá tải trả 503 sau 10–100 giây, Lite trả lời ~8 giây với chất lượng đủ dùng).

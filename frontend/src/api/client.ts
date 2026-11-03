@@ -17,6 +17,10 @@ export class ApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly errors: string[] = [],
+    /** Mã lỗi máy đọc được, VD "AI_KEYS_UNAVAILABLE" → mở hộp thoại dán key (màn 12) */
+    public readonly code: string | null = null,
+    /** Dữ liệu kèm theo lỗi (VD trạng thái từng API key) */
+    public readonly details: Record<string, unknown> = {},
   ) {
     super(message);
     this.name = 'ApiError';
@@ -34,7 +38,10 @@ export function toApiError(error: unknown): ApiError {
       return new ApiError('Không kết nối được tới bộ xử lý của app. Hãy mở lại ứng dụng.', 0);
     }
     const detail = (error.response.data as { detail?: unknown } | undefined)?.detail;
-    if (isErrorBody(detail)) return new ApiError(detail.message, error.response.status, detail.errors ?? []);
+    if (isErrorBody(detail)) {
+      const { message, errors, code, ...details } = detail;
+      return new ApiError(message, error.response.status, errors ?? [], code ?? null, details);
+    }
     if (Array.isArray(detail)) {
       // Lỗi kiểm tra dữ liệu của FastAPI (422)
       const errors = detail.map((d: { msg?: string }) => d.msg ?? String(d));

@@ -17,6 +17,7 @@ from app.models import Campaign, CampaignStatus, SubmissionLog
 from app.schemas.campaign_api import CampaignRead, SubmissionLogRead, TrialSubmitRequest, TrialSubmitResponse
 from app.services import campaign_service, export_service
 from app.services.distribution_service import QuestionDistribution, build_distributions
+from app.services.logic_service import stored_logic
 from app.services.spss_generator import SurveyDataGenerator, build_payload_tuples
 from app.workers.campaign_control import registry
 from app.workers.campaign_runner import default_http_factory, start_campaign
@@ -144,7 +145,8 @@ async def trial_submit(payload: TrialSubmitRequest, session: DbSession, runner_k
     """Nút "Gửi thử 1 phản hồi": sinh 1 phản hồi theo cấu hình hiện tại và gửi thật lên form."""
     form = await campaign_service.get_form(session, payload.form_id)
     structure = campaign_service.structure_of(form)
-    generator = SurveyDataGenerator(structure, payload.rules, payload.spss_groups)
+    # Có bản đồ logic (kể cả chưa xác nhận) thì gửi thử cũng theo logic, giống lúc chạy thật
+    generator = SurveyDataGenerator(structure, payload.rules, payload.spss_groups, logic=stored_logic(form))
     response = (await asyncio.to_thread(generator.generate, 1))[0]
     tuples = build_payload_tuples(response, structure.fbzx)
     if form.is_demo or payload.dry_run:

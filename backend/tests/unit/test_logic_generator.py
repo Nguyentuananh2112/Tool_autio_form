@@ -154,3 +154,16 @@ def test_nhom_spss_gan_voi_thai_do_chung() -> None:
     responses = _gen(sample_logic(), groups=[_scale_group()]).generate(2000)
     group_mean = (_num(responses, QUALITY) + _num(responses, TRUST)) / 2
     assert np.corrcoef(group_mean, _num(responses, RECOMMEND))[0, 1] > 0.4
+
+
+# ------------------------------------------------------------- review
+def test_soat_mau_thu_khong_bao_xe_dich_o_loai_tru_va_dao_dong_ngau_nhien() -> None:
+    from app.services.logic.review import review_logic
+
+    result = review_logic(FORM, RULES, [], sample_logic(), n=300)
+    assert result.ready and result.inconsistent_after == 0 and result.inconsistent_before > 0
+    assert FEATURES not in {d.entry_id for d in result.drifts}
+    assert AGE not in {d.entry_id for d in result.drifts}  # câu NẾU không bị sửa → chỉ dao động ngẫu nhiên
+    [corr] = result.correlations
+    assert corr.after > corr.before + 0.3
+    assert result.sample is not None and result.sample.attitude

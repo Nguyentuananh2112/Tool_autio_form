@@ -17,8 +17,8 @@
 | 8 | `ExcelImport.dc.html` | Nhập Excel/CSV: file, ghép cột ↔ câu hỏi, xem trước 5 dòng, kiểm tra lỗi | `components/workspace/excel/*` |
 | 9 | `Onboarding.dc.html` | Tour lần đầu ngay trên giao diện: 14 bước, mỗi bước làm sáng một tính năng + bong bóng giải thích cạnh nó, tự chuyển màn hình (bấm thử được) | `components/tour/*` |
 | 10 | `Help.dc.html` | Hướng dẫn: tìm kiếm, 8 thẻ tính năng (Dùng khi / Cách làm), thuật ngữ, câu hỏi thường gặp | `pages/HelpPage.tsx`, `components/help/*` |
-| 11 | `LogicReview.dc.html` | Soát logic (bước 3 mới, trước Chạy): 3 lượt soát, nhóm thái độ + chiều tốt/xấu, ràng buộc NẾU–THÌ, ô loại trừ, tự luận theo thái độ, độ đồng đều, kết quả soát 200 mẫu thử, xem thử một người — **chờ duyệt** | `pages/LogicReviewPage.tsx`, `components/logic/*` |
-| 12 | `AiQuota.dc.html` | Hộp thoại "Hết lượt AI": chuỗi key đã thử, ô dán key riêng, 3 bước tạo key — **chờ duyệt** | `components/logic/AiQuotaDialog.tsx` |
+| 11 | `LogicReview.dc.html` | Soát logic (bước 3 mới, trước Chạy): 3 lượt soát, nhóm thái độ + chiều tốt/xấu, ràng buộc NẾU–THÌ, ô loại trừ, tự luận theo thái độ, độ đồng đều, kết quả soát 200 mẫu thử, xem thử một người — **đã duyệt 2026-11-03** | `pages/LogicReviewPage.tsx`, `components/logic/*` |
+| 12 | `AiQuota.dc.html` | Hộp thoại "Hết lượt AI": chuỗi key đã thử, ô dán key riêng, 3 bước tạo key — **đã duyệt 2026-11-03** | `components/logic/AiQuotaDialog.tsx` |
 | — | `Sidebar.dc.html` | Thanh điều hướng dùng chung | `components/layout/Sidebar.tsx` |
 | — | `TourPopover.dc.html` | Bong bóng tour (tiêu đề, giải thích, tiến độ, Quay lại / Tiếp / Bỏ qua; 4 hướng đặt) | `components/tour/TourPopover.tsx` |
 

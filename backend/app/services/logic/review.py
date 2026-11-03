@@ -22,6 +22,9 @@ from app.services.spss.generator import SurveyDataGenerator
 
 REVIEW_SEED = 20_261_103
 DRIFT_REPORT_PCT = 5.0
+# ≈ 2,5 sai số chuẩn của hiệu hai tỷ lệ (p = 0,5): 100·2,5·√(2·0,25/n) ≈ 177/√n điểm %.
+# Nhánh ít người đi (VD 60 người) dao động ±20 điểm chỉ do ngẫu nhiên → không báo nhầm.
+DRIFT_NOISE_FACTOR = 177.0
 MAX_DRIFTS = 5
 MIN_PAIR_ANSWERS = 10
 ATTITUDE_LABELS = ((0.75, "rất tích cực"), (0.58, "khá tích cực"), (0.42, "trung lập"), (0.25, "khá tiêu cực"))
@@ -60,10 +63,14 @@ def _shares(responses: Sequence[GeneratedResponse], entry_id: str) -> Counter[st
     return counts
 
 
-def _drifts(structure: ParsedFormStructure, plain: Sequence[GeneratedResponse], checked: Sequence[GeneratedResponse]) -> list[RatioDrift]:
+def _drifts(
+    structure: ParsedFormStructure, logic: LogicMap, plain: Sequence[GeneratedResponse], checked: Sequence[GeneratedResponse]
+) -> list[RatioDrift]:
+    """Câu bị xê dịch tỷ lệ thật sự (vượt mức dao động ngẫu nhiên). Bỏ câu có ô loại trừ: giảm là cố ý."""
+    exclusive = {option.entry_id for option in logic.exclusive_options}
     drifts = []
     for question in structure.questions:
-        if not question.options:
+        if not question.options or question.entry_id in exclusive:
             continue
         before, after = _shares(plain, question.entry_id), _shares(checked, question.entry_id)
         n_before = sum(1 for r in plain if question.entry_id in r.answers)
@@ -71,7 +78,7 @@ def _drifts(structure: ParsedFormStructure, plain: Sequence[GeneratedResponse], 
         if not n_before or not n_after:
             continue
         drift = max(abs(after[o.value] / n_after - before[o.value] / n_before) * 100 for o in question.options)
-        if drift >= DRIFT_REPORT_PCT:
+        if drift >= max(DRIFT_REPORT_PCT, DRIFT_NOISE_FACTOR / np.sqrt(min(n_before, n_after))):
             drifts.append(RatioDrift(entry_id=question.entry_id, title=question.row_label or question.title, max_drift_pct=round(drift, 1)))
     return sorted(drifts, key=lambda d: -d.max_drift_pct)[:MAX_DRIFTS]
 
@@ -135,7 +142,7 @@ def review_logic(
         regenerated=stats.rejected if stats else 0,
         violations=violations,
         correlations=correlations,
-        drifts=_drifts(structure, plain, checked),
+        drifts=_drifts(structure, logic, plain, checked),
         sample=_sample(checked, structure, logic),
         logic=logic,
         ready=inconsistent_after == 0,

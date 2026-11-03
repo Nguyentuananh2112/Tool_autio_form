@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,11 +15,14 @@ from app.schemas.logic_api import LogicReviewRequest, LogicReviewResult
 from app.schemas.logic_schema import LogicMap
 from app.services.campaign_service import get_form, structure_of
 from app.services.demo_form import build_demo_logic
-from app.services.gemini_keys import run_with_keys
+from app.services.gemini_call import GeminiCallError
+from app.services.gemini_keys import AiKeysUnavailableError, AiUnreachableError, run_with_keys
 from app.services.logic.ai_reader import read_form_logic
 from app.services.logic.review import review_logic
 from app.services.logic.text_classifier import classify_texts
 from app.services.logic.validation import LogicMapInvalidError, ensure_valid
+
+logger = logging.getLogger(__name__)
 
 
 def stored_logic(form: Form) -> LogicMap | None:
@@ -67,7 +71,12 @@ async def _label_texts(logic: LogicMap, rules: list[QuestionRuleConfig], structu
         if not missing:
             continue
         title, subject = structure_titles.get(text.entry_id, ""), names.get(text.group_id, "")
-        labels = await run_with_keys(lambda client, m=missing, ti=title, su=subject: classify_texts(client, ti, su, m, model))
+        try:
+            labels = await run_with_keys(lambda client, m=missing, ti=title, su=subject: classify_texts(client, ti, su, m, model))
+        except (GeminiCallError, AiKeysUnavailableError, AiUnreachableError) as exc:
+            # Không chặn việc soát: câu chưa có nhãn coi là trung lập, lần soát sau phân loại lại
+            logger.warning("Chưa phân loại được câu mẫu của entry %s: %s", text.entry_id, exc)
+            continue
         text.labels.update(labels)
         changed = True
     return changed

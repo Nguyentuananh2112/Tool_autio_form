@@ -25,6 +25,8 @@ export interface BrowserStatus {
 export interface ApiErrorBody {
   message: string;
   errors: string[];
+  code?: string;
+  [extra: string]: unknown;
 }
 
 export interface UpdateInfo {

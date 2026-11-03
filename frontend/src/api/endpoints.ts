@@ -10,6 +10,7 @@ import type {
 } from '@/types/campaign';
 import type { ColumnMapping, ExcelConvertResponse, ExcelPreview } from '@/types/excel';
 import type { FormDetail, FormSummary } from '@/types/form';
+import type { LogicMap, LogicReviewResult } from '@/types/logic';
 import type { AppSettingsRead, BrowserStatus, GeneratePoolRequest } from '@/types/settings';
 
 import { api, request } from './client';
@@ -20,6 +21,22 @@ export const formsApi = {
   list: () => request(() => api.get<FormSummary[]>('/forms')),
   get: (id: string) => request(() => api.get<FormDetail>(`/forms/${id}`)),
   remove: (id: string) => request(() => api.delete<void>(`/forms/${id}`)),
+};
+
+export interface LogicReviewPayload {
+  rules: QuestionRuleConfig[];
+  spss_groups: SpssGroupConfig[];
+  logic?: LogicMap | null;
+  sample_size?: number;
+}
+
+/** Soát logic (màn 11). Đọc câu hỏi bằng AI có thể mất 1–3 phút khi Gemini quá tải. */
+export const logicApi = {
+  get: (formId: string) => request(() => api.get<LogicMap | null>(`/forms/${formId}/logic`)),
+  analyze: (formId: string) => request(() => api.post<LogicMap>(`/forms/${formId}/logic/analyze`, undefined, { timeout: 300_000 })),
+  save: (formId: string, logic: LogicMap) => request(() => api.put<LogicMap>(`/forms/${formId}/logic`, logic)),
+  review: (formId: string, payload: LogicReviewPayload) =>
+    request(() => api.post<LogicReviewResult>(`/forms/${formId}/logic/review`, payload, { timeout: 300_000 })),
 };
 
 export const excelApi = {
