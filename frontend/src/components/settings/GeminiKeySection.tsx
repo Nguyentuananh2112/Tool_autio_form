@@ -37,7 +37,7 @@ export function GeminiKeySection({ settings, onSaved }: { settings: AppSettingsR
       <h2 id="s-ai" className="m-0 text-[17px] font-semibold">Gemini AI</h2>
       <label htmlFor={id} className="text-[13px] font-medium text-muted">API key</label>
       <div className="flex flex-wrap gap-2">
-        <TextInput id={id} type="password" autoComplete="off" value={key} placeholder={settings?.gemini_key_configured ? '•••••••• (đã lưu — nhập key mới để thay)' : 'AIza...'} onChange={(e) => setKey(e.target.value)} className="min-w-[280px] flex-1 font-mono" />
+        <TextInput id={id} type="password" autoComplete="off" value={key} placeholder={settings?.gemini_key_configured ? '•••••••• (đã lưu — nhập key mới để thay)' : 'Dán API key Gemini (AIza… hoặc AQ.…)'} onChange={(e) => setKey(e.target.value)} className="min-w-[280px] flex-1 font-mono" />
         <Button variant="primary" disabled={key.trim().length < 10} loading={busy === 'save'} onClick={() => void run('save')}>Lưu key</Button>
         {settings?.gemini_key_configured && <Button variant="danger" loading={busy === 'delete'} onClick={() => void run('delete')}>Xóa key</Button>}
       </div>
