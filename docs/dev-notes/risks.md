@@ -36,15 +36,14 @@
   - DB `:memory:` cần `StaticPool`, nếu không mỗi kết nối là một DB rỗng riêng.
   - Biến môi trường `DATA_DIR=` rỗng bị Pydantic hiểu thành thư mục hiện tại → không để rỗng trong `.env`.
 
-### [RISK-009] Nhận biết gửi thành công chỉ dựa trên suy đoán — OPEN (ưu tiên cao)
-- `http_submitter.classify_response`: 200 + có chuỗi xác nhận ("Câu trả lời của bạn đã được ghi lại"…) **hoặc** trang trả về không chứa `FB_PUBLIC_LOAD_DATA_` → coi là thành công.
-- Chưa kiểm chứng với Google thật vì gửi thử sẽ tạo phản hồi thật trong form của người dùng.
-- **Cần làm:** người dùng tạo một form thử của riêng mình → gửi 1 phản hồi bằng app → đối chiếu trong tab Câu trả lời; lưu HTML trang xác nhận (ẩn danh) làm fixture test.
+### [RISK-009] Nhận biết gửi thành công — VERIFIED & FIXED 2026-11-03
+- Kiểm chứng trên form thật của người dùng (người dùng đồng ý gửi thử; 2 phản hồi ghi rõ "Phản hồi thử nghiệm từ Auto-Form" để xóa):
+  - Thành công → **200**, trang xác nhận VẪN có `FB_PUBLIC_LOAD_DATA_` (danh sách câu hỏi rỗng) nhưng KHÔNG có ô ẩn `fbzx`/`pageHistory`.
+  - Bị từ chối (gửi thiếu câu bắt buộc — Google không lưu gì) → **400**, trả lại trang form CÓ các ô ẩn đó + "Câu hỏi bắt buộc".
+- Cách nhận biết cũ dựa vào câu xác nhận tiếng Việt/Anh → sai nếu chủ form tự đổi câu xác nhận (BUG-007). Nay: 200 và không có ô ẩn của form = thành công.
 
-### [RISK-010] Trình duyệt dự phòng chưa chạy thật lần nào — OPEN
-- Chromium chưa được tải trên máy dev; `playwright_fallback.py` mới có test cho link điền sẵn.
-- Chưa xác nhận: link điền sẵn giữ giá trị qua nhiều trang; tên nút "Tiếp"/"Gửi" (giao diện tiếng Việt) và "Next"/"Submit".
-- **Cần làm:** cùng form thử của RISK-009, chạy `playwright install chromium` rồi gửi 1 phản hồi qua trình duyệt.
+### [RISK-010] Trình duyệt dự phòng — VERIFIED 2026-11-03
+- Đã gửi 1 phản hồi thật qua Playwright trên form 10 trang có rẽ nhánh: link điền sẵn giữ giá trị qua các trang, nút "Tiếp"/"Gửi" tiếng Việt bấm được → SUCCESS.
 
 ### [RISK-011] `fbzx` dùng chung cho mọi lần gửi — MONITORING
 - Token lấy một lần lúc phân tích form. Nếu Google bắt đầu kiểm tra token theo phiên, mọi lần gửi sẽ lỗi → khi đó tải lại form trước mỗi phản hồi.

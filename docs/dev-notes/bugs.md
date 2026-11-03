@@ -33,3 +33,9 @@
 - **Nguyên nhân gốc:** endpoint preview gọi `validate()` toàn form.
 - **Cách xử lý:** `preview_spss_groups` chỉ lập kế hoạch & kiểm tra các nhóm (`_plan_groups`). Test `test_preview_spss_ignores_unrelated_missing_questions`.
 - **Bài học:** Kiểm tra theo đúng phạm vi thao tác người dùng đang làm.
+
+### [BUG-007] Gửi thành công có thể bị hiểu nhầm là bị từ chối → gửi trùng — 2026-11-03 — FIXED
+- **Phát hiện khi kiểm chứng trên Google thật:** trang xác nhận cũng chứa `FB_PUBLIC_LOAD_DATA_`; app chỉ nhận ra thành công nhờ câu "Câu trả lời của bạn đã được ghi lại".
+- **Hậu quả nếu chủ form đổi câu xác nhận:** app coi là VALIDATION → gửi lại bằng trình duyệt dự phòng → form nhận 2 phản hồi giống nhau, chiến dịch đếm sai.
+- **Cách xử lý:** `classify_response` dựa vào cấu trúc (có/không ô ẩn `pageHistory`, `fbzx`), không dựa vào câu chữ. Test có trường hợp câu xác nhận tự đặt.
+- **Bài học:** Suy đoán về hệ thống bên ngoài phải được kiểm chứng bằng dữ liệu thật trước khi phát hành; ưu tiên dấu hiệu cấu trúc hơn câu chữ (câu chữ đổi theo ngôn ngữ và theo người dùng).

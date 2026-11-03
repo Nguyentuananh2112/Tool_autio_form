@@ -20,12 +20,11 @@ from app.schemas.form_schema import ParsedFormStructure
 from app.workers.submission_types import OutcomeKind, SubmitOutcome
 
 DEFAULT_TIMEOUT_SECONDS = 30.0
-CONFIRMATION_MARKERS: tuple[str, ...] = (
-    "freebirdFormviewerViewResponseConfirmationMessage",
-    "Câu trả lời của bạn đã được ghi lại",
-    "Your response has been recorded",
-)
-FORM_PAGE_MARKER = "FB_PUBLIC_LOAD_DATA_"
+# Đã kiểm chứng với Google thật (dev-notes RISK-009, 2026-11-03):
+# - Gửi thành công → 200, trang xác nhận KHÔNG có ô ẩn của form (fbzx, pageHistory); câu xác nhận
+#   có thể bị chủ form đổi tuỳ ý nên KHÔNG được dựa vào câu chữ.
+# - Bị từ chối (thiếu câu bắt buộc...) → 400, Google trả lại trang form CÓ các ô ẩn đó.
+FORM_INPUT_MARKERS: tuple[str, ...] = ('name="pageHistory"', 'name="fbzx"')
 
 
 def parse_retry_after(value: str | None) -> float | None:
@@ -46,7 +45,7 @@ def parse_retry_after(value: str | None) -> float | None:
 def classify_response(status_code: int, body: str, headers: httpx.Headers) -> SubmitOutcome:
     engine = EngineUsed.HTTPX
     if status_code == 200:
-        if any(marker in body for marker in CONFIRMATION_MARKERS) or FORM_PAGE_MARKER not in body:
+        if not any(marker in body for marker in FORM_INPUT_MARKERS):
             return SubmitOutcome(OutcomeKind.SUCCESS, status_code, engine)
         return SubmitOutcome(
             OutcomeKind.VALIDATION, status_code, engine,

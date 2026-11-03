@@ -39,12 +39,24 @@ async def _submit_with(status: int, body: str, headers: dict[str, str] | None = 
     return outcome, seen
 
 
+# Cấu trúc rút gọn từ trang Google thật (2026-11-03, dev-notes RISK-009): trang xác nhận vẫn có
+# FB_PUBLIC_LOAD_DATA_ nhưng danh sách câu hỏi rỗng và KHÔNG có ô ẩn của form.
+CONFIRM_PAGE = '<script>var FB_PUBLIC_LOAD_DATA_ = [null,[],"/forms"];</script><div class="vHW8K">{message}</div>'
+FORM_PAGE = (
+    '<script>var FB_PUBLIC_LOAD_DATA_ = [null,["Mô tả",[[1,"Câu 1",null,2]]]];</script>'
+    '<input type="hidden" name="fbzx" value="-1"><input type="hidden" name="pageHistory" value="0">'
+    '<div role="alert">Câu hỏi bắt buộc</div>'
+)
+
+
 @pytest.mark.parametrize(
     ("status", "body", "kind"),
     [
-        (200, "<div>Câu trả lời của bạn đã được ghi lại.</div>", OutcomeKind.SUCCESS),
-        (200, "<script>var FB_PUBLIC_LOAD_DATA_ = [];</script>", OutcomeKind.VALIDATION),
-        (400, "", OutcomeKind.VALIDATION),
+        (200, CONFIRM_PAGE.format(message="Câu trả lời của bạn đã được ghi lại."), OutcomeKind.SUCCESS),
+        # Chủ form tự đổi câu xác nhận → vẫn phải là thành công (nếu không sẽ gửi trùng bằng trình duyệt)
+        (200, CONFIRM_PAGE.format(message="Cảm ơn bạn đã tham gia khảo sát!"), OutcomeKind.SUCCESS),
+        (200, FORM_PAGE, OutcomeKind.VALIDATION),
+        (400, FORM_PAGE, OutcomeKind.VALIDATION),
         (404, "", OutcomeKind.FATAL),
         (503, "", OutcomeKind.SERVER),
     ],
