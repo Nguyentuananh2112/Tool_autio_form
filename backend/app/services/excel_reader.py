@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import csv
 import io
+import zipfile
 from pathlib import PurePath
 
 import pandas as pd
@@ -29,7 +31,7 @@ def list_sheets(content: bytes, filename: str) -> list[str]:
         return []
     try:
         workbook = load_workbook(io.BytesIO(content), read_only=True)
-    except (InvalidFileException, OSError, KeyError) as exc:
+    except (InvalidFileException, zipfile.BadZipFile, OSError, KeyError) as exc:
         raise ExcelReadError(f"Không mở được file Excel: {exc}") from exc
     try:
         return list(workbook.sheetnames)
@@ -37,14 +39,28 @@ def list_sheets(content: bytes, filename: str) -> list[str]:
         workbook.close()
 
 
+CSV_DELIMITERS = ",;	|"
+
+
+def _detect_delimiter(sample: str) -> str:
+    # Chỉ đoán trong các dấu phân cách hợp lệ: để Sniffer tự do sẽ chọn nhầm một chữ cái
+    # khi file chỉ có một cột (VD "Tên" → tách theo "n")
+    try:
+        return csv.Sniffer().sniff(sample, delimiters=CSV_DELIMITERS).delimiter
+    except csv.Error:
+        return ","
+
+
 def _read_csv(content: bytes) -> pd.DataFrame:
     last_error: Exception | None = None
     for encoding in CSV_ENCODINGS:
         try:
-            # sep=None + engine python: tự nhận dấu phân cách , ; hoặc tab
-            return pd.read_csv(io.BytesIO(content), sep=None, engine="python", dtype=object, encoding=encoding)
+            text = content.decode(encoding)
         except UnicodeDecodeError as exc:
             last_error = exc
+            continue
+        try:
+            return pd.read_csv(io.StringIO(text), sep=_detect_delimiter(text[:20_000]), dtype=object)
         except (pd.errors.ParserError, pd.errors.EmptyDataError, ValueError) as exc:
             raise ExcelReadError(f"Không đọc được file CSV: {exc}") from exc
     raise ExcelReadError(f"Không nhận ra bảng mã của file CSV: {last_error}")
@@ -67,7 +83,7 @@ def read_table(content: bytes, filename: str, *, sheet: str | int = 0) -> pd.Dat
     if suffix in EXCEL_SUFFIXES:
         try:
             frame = pd.read_excel(io.BytesIO(content), sheet_name=sheet, dtype=object, engine="openpyxl")
-        except (ValueError, KeyError, InvalidFileException, OSError) as exc:
+        except (ValueError, KeyError, InvalidFileException, zipfile.BadZipFile, OSError) as exc:
             raise ExcelReadError(f"Không đọc được file Excel: {exc}") from exc
     elif suffix == ".csv":
         frame = _read_csv(content)

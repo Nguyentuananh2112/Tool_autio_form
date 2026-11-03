@@ -24,3 +24,10 @@
 - [x] Grid trắc nghiệm — [ ] checkbox grid (`row[11]`)
 - [x] Mục khác (Other), Linear scale 1–5 và 1–10 — [ ] Dropdown, Date, Time
 - [ ] Form thu thập email (RISK-003) — form thật đầu tiên không bật
+
+## 2026-11-03 — Chạy thật 100 phản hồi (bản sao form Tiki, chỉ để thử)
+- 100/100 gửi thành công, 0 lỗi, ~15,6 phút (lịch 15 phút, 1 luồng); log backend sạch.
+- Rẽ nhánh: 3 đường đi 68 / 21 / 11; câu bắt buộc thiếu = 0; không có đáp án thừa ở trang không đi qua.
+- SPSS: thang C10 α = 0,858, TB 3,88 (mục tiêu 0,85 / 3,8); C15 α = 0,79 với n = 68 (dao động mẫu).
+- "Mục khác" ~5%. Phát hiện BUG-014 (hộp kiểm luôn đủ N ô) → đã sửa.
+- Test: backend 724 passed (ruff sạch), frontend 19 passed (tsc sạch).

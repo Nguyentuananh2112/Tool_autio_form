@@ -8,7 +8,9 @@ from collections.abc import Sequence
 from pydantic import BaseModel
 
 from app.models import QuestionRule, SubmissionLog
+from app.schemas.campaign_schema import QuestionRuleConfig
 from app.schemas.form_schema import ParsedFormStructure, ParsedQuestion
+from app.services.spss.validation import default_checkbox_probability
 
 
 class OptionDistribution(BaseModel):
@@ -25,11 +27,23 @@ class QuestionDistribution(BaseModel):
     options: list[OptionDistribution]
 
 
+def _rule_config(rule: QuestionRule | None) -> QuestionRuleConfig | None:
+    if rule is None:
+        return None
+    try:
+        return QuestionRuleConfig.model_validate(
+            {**rule.config_json, "entry_id": rule.entry_id, "question_type": rule.question_type}
+        )
+    except ValueError:
+        return None
+
+
 def _targets(question: ParsedQuestion, rule: QuestionRule | None) -> dict[str, float] | None:
     weights = (rule.config_json.get("weights") if rule else None) or {}
     if question.is_multi_select:
-        # Hộp kiểm: xác suất độc lập từng ô (mặc định 50%, "Mục khác" 0%)
-        return {o.value: float(weights.get(o.value, 0.0 if o.is_other else 50.0)) if weights else (0.0 if o.is_other else 50.0)
+        # Hộp kiểm: xác suất độc lập từng ô ("Mục khác" 0%); mặc định giống lúc sinh dữ liệu
+        default = default_checkbox_probability(question, _rule_config(rule))
+        return {o.value: float(weights.get(o.value, 0.0)) if weights else (0.0 if o.is_other else default)
                 for o in question.options}
     raw = {o.value: float(weights.get(o.value, 0.0)) for o in question.options} if weights else {
         o.value: 0.0 if o.is_other else 1.0 for o in question.options

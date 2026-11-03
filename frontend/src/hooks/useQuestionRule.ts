@@ -7,14 +7,29 @@ import type { QuestionRuleConfig } from '@/types/campaign';
 import type { ParsedQuestion } from '@/types/form';
 
 const DEFAULT_CHECKBOX_PERCENT = 50;
+const MIN_DEFAULT_CHECKBOX_PERCENT = 5;
 
-/** Trọng số đang áp dụng: theo luật đã lưu, hoặc mặc định giống backend (đều nhau / 50% cho hộp kiểm). */
+/**
+ * Xác suất mặc định mỗi ô (giống backend `default_checkbox_probability`): có "tối đa N" thì số ô
+ * trung bình rơi vào giữa [min, max] để số ô được tích thay đổi tự nhiên (BUG-014).
+ */
+export function defaultCheckboxPercent(question: ParsedQuestion, rule: QuestionRuleConfig | undefined): number {
+  const max = rule?.max_checked;
+  const fillable = question.options.filter((o) => !o.is_other).length;
+  if (!max || fillable === 0) return DEFAULT_CHECKBOX_PERCENT;
+  const min = Math.min(Math.max(rule?.min_checked ?? 0, question.is_required ? 1 : 0), max);
+  const percent = Math.round((1000 * ((min + max) / 2)) / fillable) / 10;
+  return Math.min(Math.max(percent, MIN_DEFAULT_CHECKBOX_PERCENT), DEFAULT_CHECKBOX_PERCENT);
+}
+
+/** Trọng số đang áp dụng: theo luật đã lưu, hoặc mặc định giống backend (đều nhau / hộp kiểm xem defaultCheckboxPercent). */
 export function effectiveWeights(question: ParsedQuestion, rule: QuestionRuleConfig | undefined): Record<string, number> {
   if (rule?.weights && Object.keys(rule.weights).length > 0) {
     return Object.fromEntries(question.options.map((o) => [o.value, rule.weights?.[o.value] ?? 0]));
   }
   if (question.is_multi_select) {
-    return Object.fromEntries(question.options.map((o) => [o.value, o.is_other ? 0 : DEFAULT_CHECKBOX_PERCENT]));
+    const percent = defaultCheckboxPercent(question, rule);
+    return Object.fromEntries(question.options.map((o) => [o.value, o.is_other ? 0 : percent]));
   }
   const uniform = presetWeights('uniform', choiceOptions(question).length);
   let index = 0;

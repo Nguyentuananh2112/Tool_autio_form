@@ -75,25 +75,34 @@ def _as_int(value: Any) -> int | None:
 
 
 
+def _raw_decode_after_marker(html: str) -> Any:
+    """Giải mã JSON trực tiếp từ vị trí '[' sau dấu '=' (an toàn với chuỗi chứa "];</script>")."""
+    marker = FB_PUBLIC_LOAD_DATA_MARKER.search(html)
+    if not marker:
+        if "accounts.google.com" in html and "ServiceLogin" in html:
+            raise FormRequiresLoginError("Biểu mẫu yêu cầu đăng nhập Google.")
+        raise FormStructureError(
+            "Không tìm thấy FB_PUBLIC_LOAD_DATA_ trong trang. Link có thể không phải form công khai."
+        )
+    start = html.find("[", marker.end())
+    if start == -1:
+        raise FormStructureError("FB_PUBLIC_LOAD_DATA_ không chứa mảng JSON hợp lệ.")
+    data, _ = json.JSONDecoder().raw_decode(html, start)
+    return data
+
+
 def extract_fb_public_load_data(html: str) -> list[Any]:
     match = FB_PUBLIC_LOAD_DATA_PATTERN.search(html)
     data: Any
     try:
         if match:
-            data = json.loads(match.group(1))
+            try:
+                data = json.loads(match.group(1))
+            except json.JSONDecodeError:
+                # Regex không tham lam có thể cắt giữa chuỗi chứa "];</script>" → thử giải mã trực tiếp
+                data = _raw_decode_after_marker(html)
         else:
-            # Dự phòng: giải mã JSON trực tiếp từ vị trí '[' sau dấu '=' (an toàn với chuỗi chứa "];")
-            marker = FB_PUBLIC_LOAD_DATA_MARKER.search(html)
-            if not marker:
-                if "accounts.google.com" in html and "ServiceLogin" in html:
-                    raise FormRequiresLoginError("Biểu mẫu yêu cầu đăng nhập Google.")
-                raise FormStructureError(
-                    "Không tìm thấy FB_PUBLIC_LOAD_DATA_ trong trang. Link có thể không phải form công khai."
-                )
-            start = html.find("[", marker.end())
-            if start == -1:
-                raise FormStructureError("FB_PUBLIC_LOAD_DATA_ không chứa mảng JSON hợp lệ.")
-            data, _ = json.JSONDecoder().raw_decode(html, start)
+            data = _raw_decode_after_marker(html)
     except json.JSONDecodeError as exc:
         raise FormStructureError(f"Không thể giải mã FB_PUBLIC_LOAD_DATA_: {exc}") from exc
 

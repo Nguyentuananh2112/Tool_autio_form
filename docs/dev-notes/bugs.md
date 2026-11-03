@@ -39,3 +39,34 @@
 - **Hậu quả nếu chủ form đổi câu xác nhận:** app coi là VALIDATION → gửi lại bằng trình duyệt dự phòng → form nhận 2 phản hồi giống nhau, chiến dịch đếm sai.
 - **Cách xử lý:** `classify_response` dựa vào cấu trúc (có/không ô ẩn `pageHistory`, `fbzx`), không dựa vào câu chữ. Test có trường hợp câu xác nhận tự đặt.
 - **Bài học:** Suy đoán về hệ thống bên ngoài phải được kiểm chứng bằng dữ liệu thật trước khi phát hành; ưu tiên dấu hiệu cấu trúc hơn câu chữ (câu chữ đổi theo ngôn ngữ và theo người dùng).
+
+### [BUG-008] Tiêu đề form chứa "];</script>" làm hỏng việc đọc form — 2026-11-03 — FIXED
+- **Phát hiện bởi:** unit test chi tiết (tests/unit/test_fb_data_extract.py).
+- **Nguyên nhân gốc:** regex không tham lam cắt ngang JSON; nhánh dự phòng `raw_decode` chỉ chạy khi regex KHÔNG khớp.
+- **Cách xử lý:** `json.loads` trên kết quả regex lỗi → thử `_raw_decode_after_marker()` trước khi báo lỗi.
+
+### [BUG-009] Ô hộp kiểm ghi cả tên lẫn mã số ("Giao hàng, 3") bị báo lỗi / điền nhầm Mục khác — 2026-11-03 — FIXED
+- **Cách xử lý:** mã số đã khớp một lựa chọn luôn được bỏ khỏi phần dư (`answer_coercion._coerce_multi`).
+
+### [BUG-010] Chữ trong "Mục khác" lấy từ Excel bị hạ thường trước khi gửi — 2026-11-03 — FIXED
+- **Nguyên nhân gốc:** phần dư tính trên chuỗi đã `casefold()`.
+- **Cách xử lý:** gỡ lựa chọn bằng regex không phân biệt hoa thường ngay trên chuỗi gốc (chỉ chuẩn hoá NFC & khoảng trắng).
+- **Bài học:** Chuẩn hoá chỉ để SO KHỚP, không dùng chuỗi đã chuẩn hoá làm dữ liệu gửi đi.
+
+### [BUG-011] Tắt app: chiến dịch không dừng kịp vẫn chạy ngầm — 2026-11-03 — FIXED
+- **Nguyên nhân gốc:** `CampaignRegistry.stop_all` hết thời hạn chỉ xoá khỏi danh sách, không `cancel()` task.
+- **Cách xử lý:** huỷ các task còn lại sau thời hạn và chờ chúng kết thúc.
+
+### [BUG-012] CSV một cột bị tách sai theo một chữ cái — 2026-11-03 — FIXED
+- **Nguyên nhân gốc:** `csv.Sniffer` tự do đoán dấu phân cách (VD "Tên" → tách theo "n").
+- **Cách xử lý:** `_detect_delimiter()` chỉ đoán trong `,;\t|`, mặc định `,`.
+
+### [BUG-013] File .xlsx hỏng làm lộ lỗi kỹ thuật `BadZipFile` — 2026-11-03 — FIXED
+- **Cách xử lý:** bắt `zipfile.BadZipFile` → `ExcelReadError` ("Không đọc được file Excel").
+
+### [BUG-014] Hộp kiểm "tối đa N" không đặt tỷ lệ → mọi phản hồi tích đúng N ô — 2026-11-03 — FIXED
+- **Phát hiện bởi:** chạy thật 100 phản hồi vào bản sao form Tiki (câu E4: 11 lựa chọn, tối đa 3 → 100/100 phản hồi đều 3 ô).
+- **Nguyên nhân gốc:** mặc định 50% mỗi ô × 11 ô ≈ 5,5 ô được tích, rồi bị cắt về `max_checked` → dữ liệu thiếu tự nhiên.
+- **Cách xử lý:** `default_checkbox_probability()` (spss/validation.py): có `max_checked` mà không có weights thì xác suất = (min + max) / 2 / số ô, kẹp trong [5%, 50%]. Cùng công thức ở `distribution_service._targets` (biểu đồ mục tiêu) và frontend `defaultCheckboxPercent` (useQuestionRule.ts).
+- **Kèm theo:** biểu đồ mục tiêu trước đây hiện 50% cho ô thiếu khoá khi đã có weights, trong khi bộ sinh dùng 0% → đã thống nhất về 0%.
+- **Bài học:** Kiểm tra phân phối của dữ liệu sinh ra trên form thật, không chỉ kiểm tra "hợp lệ".

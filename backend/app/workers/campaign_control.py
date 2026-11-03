@@ -125,7 +125,12 @@ class CampaignRegistry:
                 control.cancel()
                 tasks.append(control.task)
         if tasks:
-            await asyncio.wait(tasks, timeout=timeout)
+            _, pending = await asyncio.wait(tasks, timeout=timeout)
+            # Quá hạn mà chưa tự thoát (VD đang chờ mạng): huỷ hẳn, không để task chạy ngầm (BUG-011)
+            for task in pending:
+                task.cancel()
+            if pending:
+                await asyncio.wait(pending, timeout=5)
         self._controls.clear()
 
 

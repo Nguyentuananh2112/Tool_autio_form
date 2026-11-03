@@ -113,19 +113,26 @@ def _coerce_single(question: ParsedQuestion, raw: str) -> Coerced:
 def _coerce_multi(question: ParsedQuestion, raw: str) -> Coerced:
     """Tách ô kiểu "Giá cả, khuyến mãi; Đa dạng sản phẩm" bằng cách dò lựa chọn dài nhất trước
     (vì bản thân lựa chọn có thể chứa dấu phẩy), phần dư → Mục khác."""
-    remaining = normalize(raw)
+    # Làm việc trên chuỗi gốc (chỉ chuẩn hoá Unicode & khoảng trắng) để phần dư cho "Mục khác"
+    # giữ nguyên chữ hoa người dùng đã gõ; so khớp lựa chọn không phân biệt hoa thường (BUG-010)
+    remaining = " ".join(unicodedata.normalize("NFC", raw).split())
     chosen: list[ParsedOption] = []
     for option in sorted(question.choice_options, key=lambda o: len(o.value), reverse=True):
-        needle = normalize(option.value)
-        if needle and needle in remaining:
+        words = unicodedata.normalize("NFC", option.value).rstrip(" .").split()
+        if not words:
+            continue
+        pattern = re.compile(r"\s+".join(re.escape(word) for word in words) + r"\.?", re.IGNORECASE)
+        remaining, found = pattern.subn(" ", remaining, count=1)
+        if found:
             chosen.append(option)
-            remaining = remaining.replace(needle, " ", 1)
 
     leftover_tokens = [token for token in re.split(r"[,;|/\n]", remaining) if token.strip()]
     for token in list(leftover_tokens):
         option = _numeric_code(question, token.strip())
-        if option is not None and option not in chosen:
-            chosen.append(option)
+        if option is not None:
+            # Mã số trùng lựa chọn đã nhận theo tên ("Giao hàng, 3") chỉ bỏ đi, không thành phần dư
+            if option not in chosen:
+                chosen.append(option)
             leftover_tokens.remove(token)
 
     leftover = SEPARATOR_PATTERN.sub("", ", ".join(token.strip() for token in leftover_tokens))
@@ -146,14 +153,19 @@ def _coerce_multi(question: ParsedQuestion, raw: str) -> Coerced:
     return Coerced(Answer(values=values, other_text=other_text), warning=warning)
 
 
+_ISO_DATE = re.compile(r"^\d{4}-\d{1,2}-\d{1,2}")
+
+
 def _coerce_date(value: Any) -> Coerced:
     if isinstance(value, (datetime, pd.Timestamp)):
         parsed: date = value.date()
     elif isinstance(value, date):
         parsed = value
     else:
+        text = str(value).strip()
         try:
-            parsed = pd.to_datetime(str(value).strip(), dayfirst=True).date()
+            # yyyy-mm-dd (ISO) không có nghĩa "ngày trước tháng"; các dạng khác ưu tiên dd/mm
+            parsed = pd.to_datetime(text, dayfirst=not _ISO_DATE.match(text)).date()
         except (ValueError, OverflowError) as exc:
             raise CoercionError(f"“{value}” không phải ngày hợp lệ (dùng dạng dd/mm/yyyy).") from exc
     return Coerced(Answer(values=[parsed.isoformat()], kind=ANSWER_KIND_DATE))
