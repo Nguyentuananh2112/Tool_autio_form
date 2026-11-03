@@ -33,3 +33,16 @@
 ### [ISS-004] Heredoc dài chứa ký tự đặc biệt làm Bash tool lỗi parse — 2026-11-02 — WORKAROUND
 - **Hiện tượng:** Một lệnh Bash tạo nhiều file bằng heredoc báo `unexpected EOF while looking for matching '`, không file nào được tạo.
 - **Bài học:** Tạo/ghi file nội dung dài bằng công cụ Write, không dồn nhiều heredoc vào một lệnh shell.
+
+### [ISS-008] Câu trả lời giữa các câu không logic với nhau (mọi form) — 2026-11-03 — OPEN
+- **Phát hiện bởi:** người dùng + đo trên 100 phản hồi thật (bản sao form Tiki).
+- **Nguyên nhân gốc:** bộ sinh tạo TỪNG CỘT độc lập; chỉ các câu trong cùng nhóm SPSS mới liên hệ nhau, giữa các nhóm và với câu lẻ là ngẫu nhiên hoàn toàn.
+- **Số đo (n = 68 người đi nhánh C):**
+  - Trong nhóm C10: 11/100 người vừa có ô ≥ 4 vừa có ô ≤ 2; tương quan giữa các ô chỉ ~0,4.
+  - Giữa các nhóm/câu: C10 ↔ C15 r = −0,23; C10 ↔ C12 (giới thiệu) r = −0,10; C12 ↔ C13 (tin tưởng) r = −0,25, 26/68 người lệch ≥ 5 điểm trên thang 10. Thực tế phải dương rõ (~0,5–0,7).
+  - Nhân khẩu học: 16/24 người "Dưới 18" lại là "Nhân viên văn phòng"/"Làm tự do".
+  - Câu lựa chọn mâu thuẫn: "Hoàn toàn không nhận diện được Tiki" nhưng "thấy quảng cáo thường xuyên và dễ nhớ" (5) / "Luôn nhận ra quảng cáo" (2).
+  - Ô loại trừ: C8 "Không có đặc điểm nổi bật nào" chọn kèm ô khác 36/36 lần; E8 "Không có liên tưởng cụ thể" 8/8.
+  - Thương hiệu: sàn nghĩ đến đầu tiên (B4) trùng sàn chọn duy nhất (B5) chỉ 7/68; "Hiếm khi mua Tiki" nhưng chọn Tiki là sàn duy nhất (3).
+  - Câu tự luận chọn ngẫu nhiên, không theo thái độ (VD "Đáng tin cậy, chuyên nghiệp" với điểm C10 TB 2,8).
+- **Hướng xử lý:** xem đề xuất "Soát logic" (chờ duyệt thiết kế theo quy tắc 1).

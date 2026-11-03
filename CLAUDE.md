@@ -13,6 +13,7 @@ Trao đổi với người dùng bằng **tiếng Việt**. Tên code, thuật n
 3. **Cấm "God Component" / "God Module".** Chia nhỏ code thành module/component, tách folder khi cần. Mỗi file một trách nhiệm rõ ràng. Đây là nguyên tắc sống còn, phải tuân thủ cả backend lẫn frontend.
 4. **Người mới mở app phải biết làm gì ngay (yêu cầu 2026-11-02).** Có tour lần đầu chỉ dẫn TỪNG tính năng ngay trên giao diện (làm sáng tính năng + bong bóng giải thích cạnh nó, bấm Tiếp sang tính năng kế), trang Hướng dẫn tính năng, thanh bước ① Phân tích → ② Cấu hình → ③ Chạy, mỗi màn hình chỉ MỘT nút chính, tùy chọn nâng cao gấp gọn, màn hình trống luôn chỉ ra việc tiếp theo, giải thích thuật ngữ (Alpha, SPSS…) bằng lời thường qua nút "?". Xem `docs/ui-ux/README.md` mục Hướng dẫn người mới.
 5. **Ghi chép dev-notes.** Mọi bug, conflict, issue, risk, quyết định lệch spec, vấn đề hiệu năng, checklist kiểm tra đều ghi vào `docs/dev-notes/*.md` để không lặp lại lỗi cũ.
+6. **Câu trả lời phải logic với nhau trong MỌI form (yêu cầu 2026-11-03, xem dev-notes ISS-008).** Một người điền phải nhất quán từ câu trước tới câu sau (VD uy tín 4 điểm thì chất lượng không thể 1 điểm; mức độ các câu đánh giá "sàn sàn" nhau; nhân khẩu học không mâu thuẫn; ô loại trừ như "Không có…" không đi kèm ô khác). Trước khi điền bất kỳ form nào phải có **1–3 lượt soát (đọc) toàn bộ câu hỏi và câu trả lời**, xong mới bắt đầu gửi.
 
 ## Quy ước kỹ thuật
 - Backend: Python 3.12, môi trường ảo `backend/.venv` (`backend\.venv\Scripts\python.exe`).
