@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 from google.genai import errors
 
+from app.services.gemini_keys import AiKeysUnavailableError, KeySlot
 from app.services.gemini_service import (
-    GeminiKeyMissingError,
     GeminiServiceError,
     GeneratedAnswersResponse,
     generate_answer_pool,
@@ -68,6 +68,6 @@ async def test_invalid_key_gives_friendly_error() -> None:
 
 
 async def test_missing_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.services.gemini_service.resolve_gemini_api_key", lambda _: None)
-    with pytest.raises(GeminiKeyMissingError):
+    monkeypatch.setattr("app.services.gemini_keys.candidate_keys", lambda: [(KeySlot.USER, None), (KeySlot.SHARED, None)])
+    with pytest.raises(AiKeysUnavailableError, match="Chưa có API key"):
         await generate_answer_pool("Góp ý?", "Khảo sát", 5)

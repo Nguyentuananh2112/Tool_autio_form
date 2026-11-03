@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.core.database import init_db
 from app.main import create_app
 from app.services.form_parser import parse_form_html
-from tests.api_helpers import FakeHttp, rules_for_sample_form, wait_for_status
+from tests.api_helpers import FakeHttp, confirm_logic, rules_for_sample_form, wait_for_status
 from tests.db_helpers import reset_database
 from tests.fixtures.sample_form import FINAL_URL, build_html
 
@@ -40,7 +40,9 @@ async def client(http: FakeHttp, monkeypatch: pytest.MonkeyPatch) -> AsyncIterat
 async def _create_form(client: httpx.AsyncClient) -> str:
     response = await client.post(f"{API}/forms/parse", json={"url": "https://forms.gle/abc"})
     assert response.status_code == 201, response.text
-    return response.json()["id"]
+    form_id = response.json()["id"]
+    await confirm_logic(client, form_id)
+    return form_id
 
 
 async def _create_campaign(client: httpx.AsyncClient, form_id: str, **extra: Any) -> dict[str, Any]:

@@ -15,7 +15,7 @@ vi.mock('@/api/endpoints', async () => {
   return {
     formsApi: { list: vi.fn(async () => [form]), get: vi.fn(async () => ({ ...form, structure })), openDemo: vi.fn(async () => ({ ...form, structure })), parse: vi.fn() },
     campaignsApi: { list: vi.fn(async () => []) },
-    settingsApi: { get: vi.fn(async () => ({ app_version: '0.1.0', data_dir: 'C:/x', gemini_model: 'gemini-2.5-flash', gemini_key_configured: false })) },
+    settingsApi: { get: vi.fn(async () => ({ app_version: '0.1.0', data_dir: 'C:/x', gemini_model: 'gemini-flash-latest', gemini_key_configured: false })) },
     aiApi: {},
     excelApi: {},
   };

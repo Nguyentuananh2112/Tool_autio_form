@@ -95,13 +95,30 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
             raise
 
 
+# Cột thêm sau khi đã có người dùng: create_all không sửa bảng cũ nên thêm bằng ALTER TABLE.
+# Chỉ thêm cột cho phép NULL (an toàn với dữ liệu sẵn có).
+ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
+    ("forms", "logic_map", "JSON"),
+    ("campaigns", "logic_map", "JSON"),
+)
+
+
+def _add_missing_columns(sync_conn: Any) -> None:
+    for table, column, ddl_type in ADDED_COLUMNS:
+        existing = {row[1] for row in sync_conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+        if existing and column not in existing:
+            sync_conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}")
+            logger.info("Đã thêm cột %s.%s", table, column)
+
+
 async def init_db() -> None:
-    """Tạo bảng nếu chưa có. Khi schema đổi giữa các phiên bản sẽ dùng Alembic migration."""
+    """Tạo bảng nếu chưa có và bổ sung cột mới cho CSDL của phiên bản cũ."""
     import app.models  # noqa: F401  # đăng ký toàn bộ model vào Base.metadata
 
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(_add_missing_columns)
     except SQLAlchemyError:
         logger.exception("Không thể khởi tạo schema cơ sở dữ liệu")
         raise

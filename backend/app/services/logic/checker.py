@@ -14,7 +14,7 @@ from enum import StrEnum
 
 from app.schemas.form_schema import ParsedFormStructure
 from app.schemas.logic_schema import Consistency, LogicMap, LogicRule, RuleStrength, ThenOp
-from app.services.logic.ordering import spread_groups
+from app.services.logic.ordering import SpreadItem, SpreadItems, spread_groups
 from app.services.spss.answers import Answer
 
 # Khoảng cách vị trí (0..1) tối đa giữa hai câu cùng nhóm thái độ của một người
@@ -84,11 +84,30 @@ class ResponseChecker:
     def _check_spread(self, answers: Mapping[str, Answer]) -> list[Violation]:
         found = []
         for group_id, items in self._spread:
-            values = [
-                pos[answer.values[0]]
-                for entry_id, pos in items
-                if (answer := answers.get(entry_id)) is not None and answer.values and answer.values[0] in pos
-            ]
-            if len(values) >= 2 and max(values) - min(values) > self._limit + 1e-9:
+            current = answered_positions(items, answers)
+            if spread_conflict(current, self._limit):
                 found.append(Violation(ViolationKind.SPREAD, group_id))
         return found
+
+
+def answered_positions(items: SpreadItems, answers: Mapping[str, Answer]) -> list[tuple[SpreadItem, float]]:
+    return [
+        (item, item.positions[answer.values[0]])
+        for item in items
+        if (answer := answers.get(item.entry_id)) is not None and answer.values and answer.values[0] in item.positions
+    ]
+
+
+def rating_gap_too_wide(current: list[tuple[SpreadItem, float]], limit: float) -> bool:
+    rating = [p for item, p in current if item.rating]
+    return len(rating) >= 2 and max(rating) - min(rating) > limit + 1e-9
+
+
+def opposite_ends(current: list[tuple[SpreadItem, float]]) -> bool:
+    """Có câu ở đầu tiêu cực nhất VÀ câu ở đầu tích cực nhất (tính cả câu chữ)."""
+    values = [p for _, p in current]
+    return len(values) >= 2 and min(values) <= 1e-9 and max(values) >= 1 - 1e-9
+
+
+def spread_conflict(current: list[tuple[SpreadItem, float]], limit: float) -> bool:
+    return rating_gap_too_wide(current, limit) or opposite_ends(current)

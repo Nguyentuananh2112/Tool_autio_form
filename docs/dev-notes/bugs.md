@@ -70,3 +70,14 @@
 - **Cách xử lý:** `default_checkbox_probability()` (spss/validation.py): có `max_checked` mà không có weights thì xác suất = (min + max) / 2 / số ô, kẹp trong [5%, 50%]. Cùng công thức ở `distribution_service._targets` (biểu đồ mục tiêu) và frontend `defaultCheckboxPercent` (useQuestionRule.ts).
 - **Kèm theo:** biểu đồ mục tiêu trước đây hiện 50% cho ô thiếu khoá khi đã có weights, trong khi bộ sinh dùng 0% → đã thống nhất về 0%.
 - **Bài học:** Kiểm tra phân phối của dữ liệu sinh ra trên form thật, không chỉ kiểm tra "hợp lệ".
+
+### [BUG-015] Model gemini-2.5-flash bị Google ngừng cho key mới → mọi tính năng AI hỏng — 2026-11-03 — FIXED
+- **Phát hiện bởi:** gọi Gemini thật với key mới của người dùng (404 "no longer available to new users").
+- **Ảnh hưởng:** tạo câu tự luận bằng AI (có từ Phase 2) và Soát logic đều lỗi với mọi key tạo mới.
+- **Cách xử lý:** mặc định dùng bí danh `gemini-flash-latest` (luôn trỏ model Flash mới nhất); `services/gemini_call.generate_json` gặp 404 / quá tải kéo dài (503) thì tự chuyển model dự phòng (`gemini-flash-latest` → `gemini-flash-lite-latest`), lỗi 5xx thử lại tăng dần.
+- **Bài học:** Không đặt cứng tên model có số phiên bản; mọi lời gọi AI đi qua một chỗ có thử lại + model dự phòng.
+
+### [BUG-016] Suýt đưa một phần API key thật vào file test — 2026-11-03 — FIXED (chưa commit)
+- **Phát hiện bởi:** bộ kiểm tra an toàn chặn lệnh `git add -A`.
+- **Cách xử lý:** thay bằng key giả `AQ.FakeKeyOnlyForTests-000`, xoá `.pytest_cache`/`__pycache__` còn giữ chuỗi; quét lại toàn repo chỉ còn `backend/.env` (đã gitignore).
+- **Bài học:** Dữ liệu test cho key LUÔN là chuỗi giả. Trước commit: `grep` tiền tố key thật trên toàn repo; add file theo đường dẫn, không `git add -A` khi vừa làm việc với bí mật.

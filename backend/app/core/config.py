@@ -57,7 +57,8 @@ class Settings(BaseSettings):
     # --------------------------------------------------------------- Gemini
     # Key thật được lưu trong kho bảo mật của Windows; biến này chỉ dùng khi phát triển
     GEMINI_API_KEY: str | None = None
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    # Bí danh luôn trỏ tới model Flash mới nhất: gemini-2.5-flash đã bị ngừng cho key mới (BUG-015)
+    GEMINI_MODEL: str = "gemini-flash-latest"
 
     # ------------------------------------------------- Form fetch / engines
     FORM_FETCH_TIMEOUT_SECONDS: float = Field(default=20.0, gt=0)

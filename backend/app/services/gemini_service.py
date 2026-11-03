@@ -9,28 +9,23 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from collections.abc import Awaitable, Callable
 from typing import Any
 
 from google import genai
-from google.genai import errors, types
 from pydantic import BaseModel, ValidationError
 
-from app.services.secret_store import resolve_gemini_api_key
+from app.services.gemini_call import GeminiCallError, Sleep, generate_json
+from app.services.gemini_keys import run_with_keys
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-flash-latest"
 DEFAULT_PERSONA = "Sinh viên đại học tại Việt Nam, trả lời tự nhiên, đa dạng độ dài từ 5 đến 25 từ"
 MAX_PER_REQUEST = 50
 MAX_POOL_SIZE = 500
-RETRYABLE_CODES = frozenset({429, 500, 502, 503, 504})
 
-Sleep = Callable[[float], Awaitable[None]]
-
-
-class GeminiServiceError(RuntimeError):
-    pass
+# Lỗi Gemini đã dịch sang tiếng Việt (giữ mã HTTP để chuỗi key chuyển key) — xem gemini_call
+GeminiServiceError = GeminiCallError
 
 
 class GeminiKeyMissingError(GeminiServiceError):
@@ -73,35 +68,13 @@ def _parse_answers(response: Any) -> list[str]:
     raise GeminiServiceError("Gemini không trả về câu trả lời nào.")
 
 
-def _friendly_api_error(exc: errors.APIError) -> GeminiServiceError:
-    code = getattr(exc, "code", None)
-    if code in (400, 401, 403):
-        return GeminiServiceError("Gemini API key không hợp lệ hoặc chưa được cấp quyền. Kiểm tra lại trong Cài đặt.")
-    if code == 429:
-        return GeminiServiceError("Đã vượt giới hạn lượt gọi Gemini. Hãy thử lại sau ít phút.")
-    return GeminiServiceError(f"Gemini báo lỗi ({code}): {exc}")
-
-
 async def _generate_once(
     client: genai.Client, model: str, prompt: str, *, max_retries: int, sleep: Sleep
 ) -> list[str]:
-    config = types.GenerateContentConfig(
-        response_mime_type="application/json",
-        response_schema=GeneratedAnswersResponse,
-        temperature=0.9,
+    response = await generate_json(
+        client, model, prompt, GeneratedAnswersResponse, temperature=0.9, max_retries=max_retries, sleep=sleep
     )
-    for attempt in range(max_retries + 1):
-        try:
-            response = await client.aio.models.generate_content(model=model, contents=prompt, config=config)
-            return _parse_answers(response)
-        except errors.APIError as exc:
-            if getattr(exc, "code", None) in RETRYABLE_CODES and attempt < max_retries:
-                wait = 2.0 ** (attempt + 1)
-                logger.warning("Gemini lỗi %s, thử lại sau %.0f giây", exc.code, wait)
-                await sleep(wait)
-                continue
-            raise _friendly_api_error(exc) from exc
-    raise GeminiServiceError("Gemini không phản hồi sau nhiều lần thử.")
+    return _parse_answers(response)
 
 
 async def generate_answer_pool(
@@ -122,12 +95,22 @@ async def generate_answer_pool(
     if not 1 <= sample_count <= MAX_POOL_SIZE:
         raise GeminiServiceError(f"Số câu cần sinh phải trong khoảng 1–{MAX_POOL_SIZE}.")
 
-    if client is None:
-        key = resolve_gemini_api_key(api_key)
-        if not key:
-            raise GeminiKeyMissingError("Chưa có Gemini API key. Nhập key trong Cài đặt → Gemini AI.")
-        client = genai.Client(api_key=key)
+    async def with_client(active: genai.Client) -> list[str]:
+        return await _pool_with_client(
+            active, question_title, survey_context, sample_count, persona_hint, model, max_retries, sleep
+        )
 
+    if client is not None:
+        return await with_client(client)
+    if api_key:
+        return await with_client(genai.Client(api_key=api_key.strip()))
+    return await run_with_keys(with_client)
+
+
+async def _pool_with_client(
+    client: genai.Client, question_title: str, survey_context: str, sample_count: int,
+    persona_hint: str, model: str, max_retries: int, sleep: Sleep,
+) -> list[str]:
     answers: list[str] = []
     seen: set[str] = set()
     max_rounds = -(-sample_count // MAX_PER_REQUEST) + 2  # thêm 2 lượt bù câu trùng

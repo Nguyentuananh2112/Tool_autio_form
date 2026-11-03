@@ -31,3 +31,10 @@
 - SPSS: thang C10 α = 0,858, TB 3,88 (mục tiêu 0,85 / 3,8); C15 α = 0,79 với n = 68 (dao động mẫu).
 - "Mục khác" ~5%. Phát hiện BUG-014 (hộp kiểm luôn đủ N ô) → đã sửa.
 - Test: backend 724 passed (ruff sạch), frontend 19 passed (tsc sạch).
+
+## 2026-11-03 — Soát logic: đo trên form Tiki (cấu hình lần chạy 100 phản hồi, 400 mẫu, mức Vừa phải)
+- Bản đồ do Gemini đọc thật (rơi về flash-lite vì flash quá tải 503): 22 câu một nhóm "Đánh giá thương hiệu Tiki", chiều tích cực đúng cả 22; ràng buộc tuổi→nghề; 2 ô loại trừ; 2 câu tự luận theo thái độ.
+- Trước → sau: lệch ≥3 điểm trong C10 16 → 0; C10↔C15 −0,05 → 0,52; C12↔C13 −0,04 → 0,70; "Dưới 18 mà đi làm" 78 → 0; "không nhận diện Tiki nhưng luôn thấy quảng cáo" 35 → 0; ô loại trừ kèm ô khác 136 → 0.
+- Giữ tỷ lệ: C10 TB 3,80 → 3,78; C12 TB 5,81 → 5,88; tỷ lệ B1 giữ nguyên. Alpha C10 0,859 → 0,888 (do kéo câu lệch vào gần).
+- Bài học thiết kế: loại cả phản hồi rồi sinh lại làm lệch tỷ lệ (bớt người "Dưới 18", bớt người đi nhánh nhiều câu) → SỬA TẠI CHỖ câu mâu thuẫn; chỉ so độ lệch theo ngưỡng giữa câu chấm điểm, câu chữ chỉ chặn hai đầu ngược nhau.
+- Trước commit có làm việc với key: `grep -rn "<tiền tố key>" .` chỉ được ra `backend/.env`.

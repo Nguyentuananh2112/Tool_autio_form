@@ -15,6 +15,7 @@ from app.schemas.campaign_schema import QuestionRuleConfig, ScheduleConfig, Spss
 from app.schemas.excel_schema import ConversionReport
 from app.schemas.form_schema import ParsedFormStructure
 from app.services.excel_mapper import records_to_responses
+from app.schemas.logic_schema import LogicMap
 from app.services.spss_generator import GeneratedResponse, SurveyDataGenerator
 from app.services.text_mutation import micro_mutate
 
@@ -75,6 +76,7 @@ async def load_plan(session: AsyncSession, campaign_id: uuid.UUID) -> CampaignPl
             [SpssGroupConfig.model_validate(group) for group in campaign.spss_groups],
             seed=campaign_seed(campaign.id),
             text_mutator=micro_mutate,
+            logic=LogicMap.model_validate(campaign.logic_map) if campaign.logic_map else None,
         )
         responses = await asyncio.to_thread(generator.generate, campaign.total_target)
 

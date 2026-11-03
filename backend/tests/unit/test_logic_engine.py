@@ -61,9 +61,17 @@ def test_thang_so_khong_lien_tiep_khong_tinh() -> None:
     assert not is_rating_scale(question("9", QuestionType.LINEAR_SCALE, [option(v) for v in ["1", "2", "3", "4", "6"]]))
 
 
-def test_spread_groups_chi_gom_cau_cham_diem() -> None:
+def test_spread_groups_gom_cau_co_thu_bac_va_danh_dau_cau_cham_diem() -> None:
     [(group_id, items)] = spread_groups(FORM, sample_logic())
-    assert group_id == "brand" and [entry for entry, _ in items] == [QUALITY, TRUST, RECOMMEND]
+    assert group_id == "brand"
+    assert [(i.entry_id, i.rating) for i in items] == [(QUALITY, True), (TRUST, True), (RECOMMEND, True), (FREQ, False)]
+
+
+def test_spread_groups_bo_cau_hai_muc() -> None:
+    logic = sample_logic()
+    logic.attitude_groups[0].items.append(AttitudeItem(entry_id=KNOW))
+    [(_, items)] = spread_groups(FORM, logic)
+    assert KNOW not in [i.entry_id for i in items]
 
 
 # ------------------------------------------------------------------ attitude
@@ -180,7 +188,7 @@ def test_o_loai_tru_mot_minh_hop_le() -> None:
     (Consistency.VARIED, "5", "1", True),
 ])
 def test_do_lech_trong_nhom_theo_do_dong_deu(consistency, quality, trust, bad) -> None:
-    answers = _consistent() | {QUALITY: _a(quality), TRUST: _a(trust), RECOMMEND: _a("6")}
+    answers = _consistent() | {QUALITY: _a(quality), TRUST: _a(trust), RECOMMEND: _a("6"), FREQ: _a("Thỉnh thoảng")}
     kinds = [v.kind for v in ResponseChecker(FORM, sample_logic(consistency)).violations(answers)]
     assert (ViolationKind.SPREAD in kinds) is bad
 
@@ -190,9 +198,24 @@ def test_do_lech_so_thang_1_10_voi_thang_1_5_theo_vi_tri() -> None:
     assert [v.kind for v in ResponseChecker(FORM, sample_logic()).violations(answers)] == [ViolationKind.SPREAD]
 
 
-def test_cau_chu_khong_tinh_do_lech() -> None:
-    answers = _consistent() | {FREQ: _a("Hiếm khi")}  # câu chữ: chỉ liên kết qua thái độ chung
+def test_cau_chu_lech_vua_phai_khong_tinh() -> None:
+    # Câu chữ không so theo ngưỡng điểm: "Hiếm khi" (đầu tiêu cực) với điểm 4/5, 8/10 vẫn hợp lệ
+    answers = _consistent() | {FREQ: _a("Hiếm khi")}
     assert ResponseChecker(FORM, sample_logic()).violations(answers) == []
+
+
+def test_cau_chu_hai_dau_nguoc_nhau_la_mau_thuan() -> None:
+    # "Hiếm khi" (tiêu cực nhất) trong khi chấm 5/5 (tích cực nhất)
+    answers = _consistent() | {FREQ: _a("Hiếm khi"), QUALITY: _a("5"), TRUST: _a("5"), RECOMMEND: _a("9")}
+    kinds = [v.kind for v in ResponseChecker(FORM, sample_logic(Consistency.VARIED)).violations(answers)]
+    assert kinds == [ViolationKind.SPREAD]
+
+
+def test_sua_hai_dau_nguoc_nhau_keo_cau_chu_vao_mot_muc() -> None:
+    answers = _consistent() | {FREQ: _a("Hiếm khi"), QUALITY: _a("5"), TRUST: _a("5"), RECOMMEND: _a("10")}
+    _repairer().repair(answers, np.random.default_rng(0))
+    assert answers[FREQ].values == ["Thỉnh thoảng"]
+    assert answers[QUALITY].values == ["5"] and answers[RECOMMEND].values == ["10"]
 
 
 def test_nguong_lech_tang_dan() -> None:

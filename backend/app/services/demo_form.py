@@ -6,6 +6,18 @@ thang đo 1–10, tự luận bắt buộc. Địa chỉ dùng tên miền `.inv
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
+from app.schemas.logic_schema import (
+    AttitudeGroup,
+    AttitudeItem,
+    LogicMap,
+    LogicRule,
+    LogicSource,
+    RuleStrength,
+    TextAttitude,
+    ThenOp,
+)
 from app.schemas.form_schema import (
     OTHER_OPTION_VALUE,
     NavigationAction,
@@ -73,4 +85,23 @@ def build_demo_structure() -> ParsedFormStructure:
         title=DEMO_TITLE, description="Form có sẵn trong app để tập dùng. Không có dữ liệu nào được gửi ra ngoài.",
         view_url=DEMO_VIEW_URL, submit_url=DEMO_SUBMIT_URL, fbzx=None,
         total_pages=len(sections), sections=sections, questions=questions,
+    )
+
+
+def build_demo_logic() -> LogicMap:
+    """Bản đồ logic dựng sẵn cho form tập dùng: người mới thử bước Soát logic mà không cần API key."""
+    return LogicMap(
+        attitude_groups=[AttitudeGroup(
+            group_id="g1", name="Hài lòng với quán quen",
+            items=[AttitudeItem(entry_id=str(1010 + i)) for i in range(4)] + [AttitudeItem(entry_id="1020")],
+        )],
+        rules=[LogicRule(
+            rule_id="r1", if_entry="1002", if_values=["Dưới 18"], then_entry="1004", then_op=ThenOp.IS_NOT,
+            then_values=["Ứng dụng giao hàng"], strength=RuleStrength.USUALLY,
+            reason="Người dưới 18 tuổi ít khi tự đặt cà phê qua ứng dụng giao hàng.",
+        )],
+        text_attitudes=[TextAttitude(entry_id="1040", group_id="g1")],
+        source=LogicSource.DEMO,
+        model=None,
+        analyzed_at=datetime.now(UTC),
     )

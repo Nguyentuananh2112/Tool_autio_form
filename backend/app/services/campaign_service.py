@@ -13,6 +13,7 @@ from app.models import Campaign, CampaignStatus, DataSource, Form, QuestionRule
 from app.schemas.campaign_api import CampaignCreate, CampaignRead
 from app.schemas.campaign_schema import ScheduleConfig
 from app.schemas.form_schema import ParsedFormStructure
+from app.schemas.logic_schema import LogicMap
 from app.services.excel_mapper import records_to_responses
 from app.services.spss_generator import GeneratorConfigError, SurveyDataGenerator
 from app.workers.campaign_control import registry
@@ -90,9 +91,23 @@ async def _resolve_target(payload: CampaignCreate, structure: ParsedFormStructur
     return min(payload.total_target or report.valid_rows, report.valid_rows)
 
 
+LOGIC_NOT_CONFIRMED = "Chưa soát logic: mở bước Soát logic, xem lại rồi bấm Xác nhận trước khi chạy."
+
+
+def _confirmed_logic(form: Form, payload: CampaignCreate) -> LogicMap | None:
+    """Quy tắc 6: dữ liệu tự sinh chỉ được chạy sau khi đã soát logic. Dữ liệu Excel là dữ liệu thật → giữ nguyên."""
+    if payload.data_source != DataSource.PROBABILITY:
+        return None
+    logic = LogicMap.model_validate(form.logic_map) if form.logic_map else None
+    if logic is None or not logic.confirmed:
+        raise InvalidCampaignError(LOGIC_NOT_CONFIRMED)
+    return logic
+
+
 async def create_campaign(session: AsyncSession, payload: CampaignCreate) -> Campaign:
     form = await get_form(session, payload.form_id)
     total = await _resolve_target(payload, structure_of(form))
+    logic = _confirmed_logic(form, payload)
     campaign = Campaign(
         form_id=form.id,
         name=payload.name.strip(),
@@ -101,6 +116,7 @@ async def create_campaign(session: AsyncSession, payload: CampaignCreate) -> Cam
         schedule_config=payload.schedule.model_dump(mode="json"),
         spss_groups=[group.model_dump(mode="json") for group in payload.spss_groups],
         excel_data=payload.excel_records if payload.data_source == DataSource.EXCEL else None,
+        logic_map=logic.model_dump(mode="json") if logic else None,
         proxy_list=[payload.proxy.strip()] if payload.proxy and payload.proxy.strip() else [],
         use_playwright_fallback=payload.use_playwright_fallback,
     )

@@ -37,3 +37,6 @@ build/
 dist/
 release/
 desktop/release-notes.md
+
+# Key Gemini nhúng lúc build (sinh từ GitHub Secrets) — tuyệt đối không commit
+backend/app/core/_build_secrets.py

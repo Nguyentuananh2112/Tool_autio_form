@@ -20,8 +20,16 @@ import numpy as np
 from app.schemas.campaign_schema import QuestionRuleConfig
 from app.schemas.form_schema import ParsedFormStructure, ParsedQuestion
 from app.schemas.logic_schema import USUALLY_RATE, LogicMap, LogicRule, RuleStrength, ThenOp
-from app.services.logic.checker import SPREAD_LIMIT, Violation, ViolationKind
-from app.services.logic.ordering import SpreadItems, spread_groups
+from app.services.logic.checker import (
+    SPREAD_LIMIT,
+    Violation,
+    ViolationKind,
+    answered_positions,
+    opposite_ends,
+    rating_gap_too_wide,
+    spread_conflict,
+)
+from app.services.logic.ordering import SpreadItem, SpreadItems, spread_groups
 from app.services.spss.answers import Answer
 from app.services.spss.scales import numeric_codes
 from app.services.spss.validation import resolve_weights
@@ -118,23 +126,31 @@ class ResponseRepairer:
         return start, start + limit
 
     def _fix_spread(self, items: SpreadItems, answers: dict[str, Answer]) -> bool:
-        answered = [
-            (entry_id, pos, pos[answer.values[0]])
-            for entry_id, pos in items
-            if (answer := answers.get(entry_id)) is not None and answer.values and answer.values[0] in pos
-        ]
-        if len(answered) < 2:
+        current = answered_positions(items, answers)
+        if not spread_conflict(current, self._limit):
             return False
-        values = [p for _, _, p in answered]
-        if max(values) - min(values) <= self._limit + 1e-9:
-            return False
-        low, high = self._window(values)
-        for entry_id, pos, current in answered:
-            if low - 1e-9 <= current <= high + 1e-9:
-                continue
-            inside = [(abs(p - current), value) for value, p in pos.items() if low - 1e-9 <= p <= high + 1e-9]
-            if not inside:  # thang thưa hơn độ rộng cửa sổ: lấy mức gần nhất
-                inside = [(abs(p - min(high, max(low, current))), value) for value, p in pos.items()]
-            value = min(inside)[1]
-            answers[entry_id] = Answer(values=[value], numeric_value=numeric_codes(self._questions[entry_id]).get(value))
+        if rating_gap_too_wide(current, self._limit):
+            low, high = self._window([p for item, p in current if item.rating])
+            for item, position in current:
+                if item.rating and not low - 1e-9 <= position <= high + 1e-9:
+                    self._set(answers, item, self._nearest(item, position, low, high))
+            current = answered_positions(items, answers)
+        if opposite_ends(current):
+            # Kéo câu xa trung vị nhất (ưu tiên câu chữ) vào trong một mức
+            median = float(np.median([p for _, p in current]))
+            item, position = max(current, key=lambda pair: (abs(pair[1] - median), not pair[0].rating))
+            levels = sorted(item.positions.values())
+            step = levels[1] if position <= 1e-9 else levels[-2]
+            self._set(answers, item, next(v for v, p in item.positions.items() if abs(p - step) < 1e-9))
         return True
+
+    @staticmethod
+    def _nearest(item: SpreadItem, position: float, low: float, high: float) -> str:
+        inside = [(abs(p - position), value) for value, p in item.positions.items() if low - 1e-9 <= p <= high + 1e-9]
+        if not inside:  # thang thưa hơn độ rộng cửa sổ: lấy mức gần cửa sổ nhất
+            target = min(high, max(low, position))
+            inside = [(abs(p - target), value) for value, p in item.positions.items()]
+        return min(inside)[1]
+
+    def _set(self, answers: dict[str, Answer], item: SpreadItem, value: str) -> None:
+        answers[item.entry_id] = Answer(values=[value], numeric_value=numeric_codes(self._questions[item.entry_id]).get(value))

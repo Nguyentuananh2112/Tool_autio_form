@@ -55,7 +55,7 @@ async def test_ngu_het_thoi_gian_tra_ve_true() -> None:
     control = CampaignControl(campaign_id="c1")
     started = time.monotonic()
     assert await control.sleep(0.02) is True
-    assert time.monotonic() - started >= 0.015
+    assert time.monotonic() - started >= 0.01  # đồng hồ Windows thô ~15 ms
 
 
 async def test_ngu_bi_huy_thuc_day_ngay() -> None:

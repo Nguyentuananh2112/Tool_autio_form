@@ -40,13 +40,23 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: backend/requirements*.txt
-      - name: Kiểm thử & đóng gói backend
+      - name: Kiểm thử backend
         working-directory: backend
         env:
           PYTHONIOENCODING: utf-8
         run: |
           python -m pip install -r requirements-dev.txt -r requirements-build.txt
           python -m pytest -q
+
+      # Tách bước: key Gemini chỉ có mặt lúc đóng gói, không lộ cho bước chạy test (SPEC-020)
+      - name: Nhúng key Gemini chung (GitHub Secrets) rồi đóng gói backend
+        working-directory: backend
+        env:
+          PYTHONIOENCODING: utf-8
+          GEMINI_SHARED_KEY: ${{ secrets.GEMINI_SHARED_KEY }}
+          GEMINI_BACKUP_KEY: ${{ secrets.GEMINI_BACKUP_KEY }}
+        run: |
+          python packaging/write_build_secrets.py
           python packaging/build_backend.py
 
       - uses: actions/setup-node@v4

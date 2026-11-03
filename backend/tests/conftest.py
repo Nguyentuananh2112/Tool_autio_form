@@ -9,3 +9,5 @@ _TEST_DIR = Path(tempfile.mkdtemp(prefix="autoform-test-"))
 os.environ["DATA_DIR"] = str(_TEST_DIR)
 os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{(_TEST_DIR / 'test.db').as_posix()}"
 os.environ.pop("APP_TOKEN", None)
+# Không bao giờ dùng key Gemini thật của máy dev (backend/.env) trong test
+os.environ["GEMINI_API_KEY"] = ""

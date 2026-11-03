@@ -24,6 +24,8 @@ class Form(Base):
     parsed_structure: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     # Form mẫu của Chế độ tập dùng: mọi lần gửi chỉ mô phỏng, không gửi lên Google (SPEC-017)
     is_demo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    # Bản đồ logic (LogicMap.model_dump(mode="json")) từ bước Soát logic; None = chưa soát (SPEC-020)
+    logic_map: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

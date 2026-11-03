@@ -64,6 +64,8 @@ class Campaign(Base):
         JSON, nullable=False, default=list, server_default=text("'[]'")
     )
     excel_data: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
+    # Ảnh chụp bản đồ logic đã xác nhận lúc tạo chiến dịch → chạy tiếp sau tạm dừng sinh lại đúng dữ liệu cũ
+    logic_map: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
     proxy_list: Mapped[list[str]] = mapped_column(
         JSON, nullable=False, default=list, server_default=text("'[]'")
     )

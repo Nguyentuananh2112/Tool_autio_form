@@ -16,6 +16,7 @@ from app.api import (
     campaign_run_router,
     excel_router,
     form_router,
+    logic_router,
     health_router,
     settings_router,
     system_router,
@@ -69,7 +70,7 @@ def create_app(*, runner_kwargs: dict[str, Any] | None = None) -> FastAPI:
     prefix = app_settings.API_V1_PREFIX
     app.include_router(health_router.router, prefix=prefix)
     protected = [Depends(require_app_token)]
-    for module in (form_router, excel_router, ai_router, settings_router, campaign_router, campaign_run_router, system_router):
+    for module in (form_router, logic_router, excel_router, ai_router, settings_router, campaign_router, campaign_run_router, system_router):
         app.include_router(module.router, prefix=prefix, dependencies=protected)
     app.include_router(ws_router.router)
     return app

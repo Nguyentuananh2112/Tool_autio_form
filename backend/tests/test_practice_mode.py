@@ -62,7 +62,13 @@ async def test_demo_campaign_and_trial_never_send(client: httpx.AsyncClient) -> 
     trial = (await client.post(f"{API}/campaigns/trial-submit", json={"form_id": form_id, "rules": DEMO_RULES})).json()
     assert trial["success"] and trial["engine_used"] == "SIMULATED"
 
+    # Soát logic của form tập dùng: bản đồ dựng sẵn, không cần API key
+    logic = (await client.post(f"{API}/forms/{form_id}/logic/analyze")).json()
+    assert logic["source"] == "DEMO" and logic["confirmed"] is False
     body = {"form_id": form_id, "name": "Tập dùng", "total_target": 8, "rules": DEMO_RULES}
+    blocked = await client.post(f"{API}/campaigns", json=body)
+    assert blocked.status_code == 422 and "Soát logic" in blocked.json()["detail"]["message"]
+    await client.put(f"{API}/forms/{form_id}/logic", json={**logic, "confirmed": True})
     campaign = (await client.post(f"{API}/campaigns", json=body)).json()
     await client.post(f"{API}/campaigns/{campaign['id']}/start")
     done = await wait_for_status(client, campaign["id"], "COMPLETED")

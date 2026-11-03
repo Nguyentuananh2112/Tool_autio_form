@@ -26,6 +26,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Any:
 
 def _campaign_id(client: TestClient) -> str:
     form_id = client.post(f"{API}/forms/parse", json={"url": "https://forms.gle/x"}).json()["id"]
+    assert client.put(f"{API}/forms/{form_id}/logic", json={"confirmed": True}).status_code == 200
     body = {"form_id": form_id, "name": "WS", "total_target": 3, "rules": rules_for_sample_form()}
     return client.post(f"{API}/campaigns", json=body).json()["id"]
 

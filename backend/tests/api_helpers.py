@@ -40,3 +40,10 @@ async def wait_for_status(client: Any, campaign_id: str, wanted: str, timeout: f
         if asyncio.get_running_loop().time() > deadline:
             raise AssertionError(f"Hết thời gian chờ trạng thái {wanted}, hiện tại: {body}")
         await asyncio.sleep(0.02)
+
+
+async def confirm_logic(client: Any, form_id: str, logic: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Bước Soát logic bắt buộc trước khi tạo chiến dịch (quy tắc 6): lưu bản đồ đã xác nhận."""
+    response = await client.put(f"/api/v1/forms/{form_id}/logic", json={**(logic or {}), "confirmed": True})
+    assert response.status_code == 200, response.text
+    return response.json()
