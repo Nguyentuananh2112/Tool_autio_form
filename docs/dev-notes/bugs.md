@@ -104,3 +104,9 @@
 - **Nguyên nhân gốc:** `lg:sticky` không giới hạn chiều cao; khung cao ~840px + vị trí → đáy khung chỉ thấy khi lăn tới cuối trang; khung không tự cuộn nên lăn chuột trên khung cuộn cả trang.
 - **Cách xử lý:** khung dính (Thiết lập chạy, danh sách trang) giới hạn `max-h: 100vh - 3rem`, tự cuộn riêng (`overflow-y-auto`, `overscroll-contain`). Đo bằng trình duyệt thật: lăn ở cột câu hỏi → khung nằm gọn; lăn trên khung → chỉ khung cuộn, trang đứng yên.
 - **Bài học:** Phần tử `sticky` luôn phải có giới hạn chiều cao + cuộn riêng.
+
+### [BUG-021] Phát hành v0.1.0 lỗi ở bước build bộ cài: ENOENT `.releaseInfo.releaseNotesFile=release-notes.md` — 2026-11-09 — FIXED
+- **Phát hiện bởi:** CI Release (lần đẩy tag v0.1.0 đầu tiên); chưa có Release nào được tạo.
+- **Nguyên nhân gốc:** release.yml dùng `-c.releaseInfo.releaseNotesFile=...`; trên runner, electron-builder 26 hiểu `-c` là đường dẫn file cấu hình nên đi mở file tên `.releaseInfo...`.
+- **Cách xử lý:** đổi sang dạng đầy đủ `--config.releaseInfo.releaseNotesFile=release-notes.md`; chạy thử lệnh build ở máy (publish never) đạt.
+- **Bài học:** Ghi đè cấu hình electron-builder qua CLI luôn dùng `--config.<khoá>`, không dùng `-c.<khoá>`.

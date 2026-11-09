@@ -76,4 +76,4 @@ jobs:
         run: |
           npm ci
           npm run build
-          npx electron-builder --win --publish always -c.releaseInfo.releaseNotesFile=release-notes.md
+          npx electron-builder --win --publish always --config.releaseInfo.releaseNotesFile=release-notes.md
