@@ -98,3 +98,9 @@
 - **Nguyên nhân gốc:** runner đặt COMPLETED khi gửi hết hàng đợi, không xét số thành công; bảng chiến dịch tính tiến độ = thành công + lỗi và tô một màu theo trạng thái.
 - **Cách xử lý:** gửi hết mà 0 thành công → trạng thái FAILED kèm lý do; huy hiệu "Không gửi được" (đỏ) / "Hoàn thành · có lỗi" (cam) dựa trên số thành công/lỗi (đúng cả với chiến dịch cũ đã lưu); thanh tiến độ tách xanh/đỏ, ghi "X thành công · Y lỗi / tổng".
 - **Bài học:** "Xong" khác "thành công" — mọi chỉ báo tiến độ phải tách số thành công khỏi số lỗi.
+
+### [BUG-020] Khung "Thiết lập chạy" dính khi lăn nhưng cao hơn màn hình → phần dưới bị che, lăn trên khung lại cuộn cả trang — 2026-11-09 — FIXED
+- **Phát hiện bởi:** người dùng (màn Cấu hình, màn hình 1424×888).
+- **Nguyên nhân gốc:** `lg:sticky` không giới hạn chiều cao; khung cao ~840px + vị trí → đáy khung chỉ thấy khi lăn tới cuối trang; khung không tự cuộn nên lăn chuột trên khung cuộn cả trang.
+- **Cách xử lý:** khung dính (Thiết lập chạy, danh sách trang) giới hạn `max-h: 100vh - 3rem`, tự cuộn riêng (`overflow-y-auto`, `overscroll-contain`). Đo bằng trình duyệt thật: lăn ở cột câu hỏi → khung nằm gọn; lăn trên khung → chỉ khung cuộn, trang đứng yên.
+- **Bài học:** Phần tử `sticky` luôn phải có giới hạn chiều cao + cuộn riêng.

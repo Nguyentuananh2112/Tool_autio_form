@@ -20,7 +20,7 @@ export function PageRail({ structure, readiness }: { structure: ParsedFormStruct
   for (const issue of readiness.issues) missingByPage.set(issue.pageIndex, (missingByPage.get(issue.pageIndex) ?? 0) + 1);
 
   return (
-    <nav aria-label="Các trang của form" data-tour="rail" className="flex flex-col gap-1 self-start rounded-xl border border-line bg-surface p-2.5 lg:sticky lg:top-6">
+    <nav aria-label="Các trang của form" data-tour="rail" className="flex flex-col gap-1 self-start rounded-xl border border-line bg-surface p-2.5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:overscroll-contain">
       <span className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted">{structure.total_pages} trang</span>
       {structure.sections.map((section) => {
         const questions = pages.get(section.page_index) ?? [];

@@ -29,7 +29,7 @@ export function RunSettingsPanel({ form, readiness }: { form: FormDetail; readin
   const blocked = (excelMode ? !config.excel?.validRows : readiness.issues.length > 0) || target <= 0;
 
   return (
-    <aside aria-label="Thiết lập chạy" data-tour="run" className="flex flex-col gap-4 self-start rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-6">
+    <aside aria-label="Thiết lập chạy" data-tour="run" className="flex flex-col gap-4 self-start rounded-xl border border-line bg-surface p-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:overscroll-contain">
       <h2 className="m-0 text-[17px] font-semibold">Thiết lập chạy</h2>
       <Field label="Tên chiến dịch (không bắt buộc)" htmlFor={nameId}>
         <TextInput id={nameId} value={config.name} placeholder="VD: Đợt chính thức" onChange={(e) => patch(form.id, { name: e.target.value })} />
