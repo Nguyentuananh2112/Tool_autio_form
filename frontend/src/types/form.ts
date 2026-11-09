@@ -47,6 +47,16 @@ export interface ParsedFormStructure {
   total_pages: number;
   sections: ParsedSection[];
   questions: ParsedQuestion[];
+  /** Câu kiểu app chưa điền được (VD tải tệp). Form lưu từ bản cũ có thể không có trường này. */
+  unsupported_items?: UnsupportedItem[];
+}
+
+export interface UnsupportedItem {
+  item_id: number;
+  title: string;
+  type_id: number;
+  page_index: number;
+  is_required: boolean;
 }
 
 export interface FormSummary {
@@ -74,4 +84,5 @@ export const QuestionType = {
   GRID: 7,
   DATE: 9,
   TIME: 10,
+  RATING: 18,
 } as const;

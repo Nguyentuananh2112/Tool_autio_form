@@ -61,3 +61,17 @@ describe('computePopoverPosition', () => {
     expect(below.left + POPOVER_WIDTH).toBeLessThanOrEqual(1440 - 16);
   });
 });
+
+describe('câu kiểu chưa hỗ trợ (BUG-017)', () => {
+  it('câu bắt buộc chưa hỗ trợ chặn chạy, câu không bắt buộc thì không', () => {
+    const structure = sampleStructure();
+    const base = computeReadiness(structure, {}, []).issues.length;
+    structure.unsupported_items = [
+      { item_id: 9, title: 'Tải CV lên', type_id: 13, page_index: 0, is_required: true },
+      { item_id: 10, title: 'Ảnh', type_id: 13, page_index: 0, is_required: false },
+    ];
+    const issues = computeReadiness(structure, {}, []).issues;
+    expect(issues.length).toBe(base + 1);
+    expect(issues.some((i) => i.message.includes('Tải CV lên'))).toBe(true);
+  });
+});

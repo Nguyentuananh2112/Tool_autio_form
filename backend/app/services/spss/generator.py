@@ -76,6 +76,12 @@ class SurveyDataGenerator:
             if entry_id not in self._questions
         ]
         plans, grouped = self._plan_groups(errors)
+        # Câu bắt buộc kiểu chưa hỗ trợ → Google từ chối MỌI phản hồi; chặn ngay thay vì gửi rồi lỗi (BUG-017)
+        errors.extend(
+            f"Câu bắt buộc '{item.title}' (trang {item.page_index + 1}) thuộc kiểu app chưa điền được "
+            f"(mã {item.type_id}). Hãy bỏ bắt buộc câu này trong Google Form hoặc dùng form khác."
+            for item in self.structure.blocking_unsupported
+        )
 
         for question in self.structure.questions:
             if question.entry_id not in grouped:

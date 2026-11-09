@@ -171,3 +171,43 @@ async def test_cai_dat_cho_biet_key_rieng_va_key_chung(
     body = (await client.get(f"{API}/settings")).json()
     assert (body["gemini_user_key"], body["gemini_shared_key"], body["gemini_key_configured"]) == (user, shared, configured)
     assert all(value not in {"u", "s", "b"} for value in body.values())  # không bao giờ trả key ra ngoài
+
+
+async def test_phan_tich_lai_cung_link_cap_nhat_form_cu_va_bat_soat_lai(
+    client: httpx.AsyncClient, ai: list[int], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    form_id = await _form(client)
+    logic = (await client.post(f"{API}/forms/{form_id}/logic/analyze")).json()
+    await client.put(f"{API}/forms/{form_id}/logic", json={**logic, "confirmed": True})
+
+    # Không đổi gì: giữ nguyên id và vẫn đã xác nhận
+    again = (await client.post(f"{API}/forms/parse", json={"url": "https://forms.gle/x"})).json()
+    assert again["id"] == form_id
+    assert (await client.get(f"{API}/forms/{form_id}/logic")).json()["confirmed"] is True
+
+    # Form đổi (thêm câu): cùng id, cấu trúc mới, bản đồ phải soát lại
+    changed = FORM.model_copy(update={"title": "Form đã sửa"})
+
+    async def fake_parse(url: str) -> Any:
+        return changed
+
+    monkeypatch.setattr("app.api.form_router.parse_google_form", fake_parse)
+    updated = (await client.post(f"{API}/forms/parse", json={"url": "https://forms.gle/x"})).json()
+    assert updated["id"] == form_id and updated["title"] == "Form đã sửa"
+    assert (await client.get(f"{API}/forms/{form_id}/logic")).json()["confirmed"] is False
+    assert len((await client.get(f"{API}/forms")).json()) == 1
+
+
+async def test_phan_tich_lai_ma_cau_trong_ban_do_mat_thi_xoa_ban_do(
+    client: httpx.AsyncClient, ai: list[int], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    form_id = await _form(client)
+    await client.post(f"{API}/forms/{form_id}/logic/analyze")
+    fewer = FORM.model_copy(update={"questions": [q for q in FORM.questions if q.entry_id != "1009"]})
+
+    async def fake_parse(url: str) -> Any:
+        return fewer
+
+    monkeypatch.setattr("app.api.form_router.parse_google_form", fake_parse)
+    await client.post(f"{API}/forms/parse", json={"url": "https://forms.gle/x"})
+    assert (await client.get(f"{API}/forms/{form_id}/logic")).json() is None

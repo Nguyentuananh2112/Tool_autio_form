@@ -40,6 +40,12 @@ logger = logging.getLogger(__name__)
 
 NETWORK_RETRIES = 2
 AUTO_PAUSE_REASON = "Google đang giới hạn số lần gửi. Chiến dịch đã tự tạm dừng; hãy chờ một lúc rồi bấm Tiếp tục."
+# Form từ chối liên tiếp → gần như chắc chắn lỗi cấu hình / form đổi, không phải ngẫu nhiên: dừng sớm thay vì đốt hết lượt
+MAX_CONSECUTIVE_FAILURES = 5
+FAILURE_PAUSE_REASON = (
+    "Google từ chối {count} phản hồi liên tiếp nên chiến dịch đã tự tạm dừng. Xem lỗi trong Nhật ký gửi, "
+    "kiểm tra lại form (có câu mới / câu đổi kiểu?) rồi phân tích lại form trước khi bấm Tiếp tục."
+)
 USER_STOP_REASON = "Người dùng đã dừng chiến dịch."
 
 
@@ -104,6 +110,7 @@ class CampaignRunner:
         self.plan: CampaignPlan | None = None
         self.completed = 0
         self.failed = 0
+        self._consecutive_failures = 0
 
     # ------------------------------------------------------------------ public
     async def run(self) -> CampaignStatus:
@@ -182,6 +189,15 @@ class CampaignRunner:
             if outcome.ok:
                 self.guard.on_success()
             await self._record(item.response, outcome)
+            self._track_failures(outcome)
+
+    def _track_failures(self, outcome: SubmitOutcome) -> None:
+        if outcome.ok:
+            self._consecutive_failures = 0
+            return
+        self._consecutive_failures += 1
+        if self._consecutive_failures >= MAX_CONSECUTIVE_FAILURES and not self.control.is_paused:
+            self.control.pause(FAILURE_PAUSE_REASON.format(count=self._consecutive_failures))
 
     def _handle_blocked(self, item: _WorkItem, outcome: SubmitOutcome) -> None:
         decision = self.guard.on_blocked(outcome.retry_after, self.clock())
@@ -211,6 +227,7 @@ class CampaignRunner:
             if self._pause_recorded:
                 self._pause_recorded = False
                 self.guard.reset_after_resume()
+                self._consecutive_failures = 0
                 await self._set_status(CampaignStatus.RUNNING)
         return True
 

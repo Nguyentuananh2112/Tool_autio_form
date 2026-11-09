@@ -11,6 +11,7 @@ from app.schemas.form_api import FormDetail, FormParseRequest, FormSummary
 from app.services.campaign_service import get_form, structure_of
 from app.services.demo_form import build_demo_structure
 from app.services.form_parser import parse_google_form
+from app.services.logic_service import refresh_form
 
 router = APIRouter(prefix="/forms", tags=["forms"])
 
@@ -30,12 +31,20 @@ def _detail(form: Form) -> FormDetail:
 
 @router.post("/parse", response_model=FormDetail, status_code=status.HTTP_201_CREATED)
 async def parse_form(payload: FormParseRequest, session: DbSession) -> FormDetail:
+    """Phân tích link. Link đã có trong app → cập nhật form cũ (giữ id nên giữ cấu hình đã đặt)."""
     structure = await parse_google_form(payload.url)
-    form = Form(
-        title=structure.title, view_url=structure.view_url, submit_url=structure.submit_url,
-        parsed_structure=structure.model_dump(mode="json"),
-    )
-    session.add(form)
+    existing = (await session.execute(
+        select(Form).where(Form.view_url == structure.view_url, Form.is_demo.is_(False)).order_by(Form.created_at.desc()).limit(1)
+    )).scalar_one_or_none()
+    if existing is None:
+        form = Form(
+            title=structure.title, view_url=structure.view_url, submit_url=structure.submit_url,
+            parsed_structure=structure.model_dump(mode="json"),
+        )
+        session.add(form)
+    else:
+        form = existing
+        refresh_form(form, structure)
     await session.commit()
     await session.refresh(form)
     return _detail(form)

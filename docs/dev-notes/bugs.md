@@ -81,3 +81,14 @@
 - **Phát hiện bởi:** bộ kiểm tra an toàn chặn lệnh `git add -A`.
 - **Cách xử lý:** thay bằng key giả `AQ.FakeKeyOnlyForTests-000`, xoá `.pytest_cache`/`__pycache__` còn giữ chuỗi; quét lại toàn repo chỉ còn `backend/.env` (đã gitignore).
 - **Bài học:** Dữ liệu test cho key LUÔN là chuỗi giả. Trước commit: `grep` tiền tố key thật trên toàn repo; add file theo đường dẫn, không `git add -A` khi vừa làm việc với bí mật.
+
+### [BUG-017] Form có câu "Đánh giá" (sao, type 18) → cả 50 phản hồi bị Google từ chối — 2026-11-09 — FIXED
+- **Phát hiện bởi:** người dùng chạy form "Interview Questions" (50/50 lỗi 400 rồi "Không tìm thấy nút Tiếp/Gửi").
+- **Nguyên nhân gốc (3 lớp):** (1) parser không biết type 18 (Rating) và **bỏ qua âm thầm** câu bắt buộc → Google từ chối mọi phản hồi; (2) trình duyệt dự phòng so chữ nút với "Gửi" dựng sẵn (U+1EED) trong khi Google viết dạng TÁCH DẤU (ư U+01B0 + dấu hỏi U+0309) → không bao giờ khớp; (3) bộ chạy không dừng khi form từ chối liên tiếp.
+- **Cách xử lý:** `QuestionType.RATING` (gửi "1".."N" như thang đo; trình duyệt bấm `[role=radio][data-value]` vì link điền sẵn không nhận giá trị Đánh giá); kiểu chưa hỗ trợ ghi vào `unsupported_items`, câu bắt buộc chặn chạy + cảnh báo đỏ ở Cấu hình; `workers/form_page.py` tìm nút theo `jsname` cố định (Gửi `M2UYVd`, Tiếp `OCpkoe`) rồi chữ đã chuẩn hoá NFC; 5 lần thất bại liên tiếp → tự tạm dừng; "Phân tích lại" cùng link cập nhật form cũ (giữ cấu hình) thay vì tạo form mới.
+- **Bài học:** Không bao giờ bỏ qua âm thầm dữ liệu không hiểu — phải báo người dùng. So chuỗi tiếng Việt từ trang web luôn chuẩn hoá NFC. Tính năng dự phòng phải có test chạy trình duyệt thật (tests/test_playwright_fallback_browser.py).
+
+### [BUG-018] Trình duyệt dự phòng báo "thành công" sau khi chỉ bấm Tiếp ở trang 1 (form nhiều trang) — 2026-11-09 — FIXED
+- **Phát hiện bởi:** điều tra BUG-017 (thử bấm Tiếp trên bản sao form Tiki, KHÔNG bấm Gửi).
+- **Nguyên nhân gốc:** URL đổi sang `/formResponse` ngay khi bấm Tiếp; code cũ coi URL đó là đã gửi xong.
+- **Cách xử lý:** chỉ coi là đã gửi khi trang không còn ô ẩn `fbzx` (giống BUG-007); sang trang được xác nhận bằng `pageHistory` thay đổi.

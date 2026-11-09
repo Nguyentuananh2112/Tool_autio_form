@@ -26,6 +26,7 @@ class QuestionType(IntEnum):
     GRID = 7
     DATE = 9
     TIME = 10
+    RATING = 18  # câu "Đánh giá" (sao / tim / ngón cái), gửi giá trị "1".."N" như thang đo (BUG-017)
 
 
 PAGE_BREAK_TYPE_ID = 8
@@ -40,12 +41,15 @@ QUESTION_TYPE_NAMES: dict[int, str] = {
     QuestionType.GRID: "GRID",
     QuestionType.DATE: "DATE",
     QuestionType.TIME: "TIME",
+    QuestionType.RATING: "RATING",
 }
 
 TEXT_TYPES: frozenset[int] = frozenset({QuestionType.SHORT_ANSWER, QuestionType.PARAGRAPH})
 SINGLE_CHOICE_TYPES: frozenset[int] = frozenset(
-    {QuestionType.MULTIPLE_CHOICE, QuestionType.DROPDOWN, QuestionType.LINEAR_SCALE}
+    {QuestionType.MULTIPLE_CHOICE, QuestionType.DROPDOWN, QuestionType.LINEAR_SCALE, QuestionType.RATING}
 )
+# Phần tử không cần điền: 6 = tiêu đề/mô tả, 11 = hình ảnh, 12 = video (8 = ngắt trang xử lý riêng)
+STATIC_ITEM_TYPES: frozenset[int] = frozenset({6, 11, 12})
 BRANCHING_TYPES: frozenset[int] = frozenset({QuestionType.MULTIPLE_CHOICE, QuestionType.DROPDOWN})
 
 
@@ -123,6 +127,16 @@ class ParsedQuestion(BaseModel):
         )
 
 
+class UnsupportedItem(BaseModel):
+    """Câu hỏi kiểu app chưa điền được (VD tải tệp lên). Bắt buộc mà bỏ qua thì Google từ chối mọi phản hồi."""
+
+    item_id: int
+    title: str
+    type_id: int
+    page_index: int
+    is_required: bool
+
+
 class ParsedFormStructure(BaseModel):
     model_config = ConfigDict(use_enum_values=False)
 
@@ -134,6 +148,12 @@ class ParsedFormStructure(BaseModel):
     total_pages: int = Field(ge=1)
     sections: list[ParsedSection]
     questions: list[ParsedQuestion]
+    # Mặc định rỗng để đọc được cấu trúc đã lưu từ phiên bản cũ
+    unsupported_items: list[UnsupportedItem] = Field(default_factory=list)
+
+    @property
+    def blocking_unsupported(self) -> list[UnsupportedItem]:
+        return [item for item in self.unsupported_items if item.is_required]
 
     def get_question(self, entry_id: str) -> ParsedQuestion | None:
         return next((q for q in self.questions if q.entry_id == entry_id), None)

@@ -8,20 +8,26 @@ Google tự đi đúng nhánh, không cần tìm và click từng ô. KHÔNG dù
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any
 from urllib.parse import urlencode
 
 from app.models.submission_log import EngineUsed
 from app.schemas.form_schema import ParsedFormStructure
 from app.services.spss_generator import ANSWER_KIND_DATE, ANSWER_KIND_TIME, GeneratedResponse
+from app.workers.form_page import (
+    FormButton,
+    fill_ratings,
+    find_button,
+    is_confirmation,
+    page_history,
+    wait_until_rendered,
+)
 from app.workers.submission_types import OutcomeKind, SubmitOutcome
 
 logger = logging.getLogger(__name__)
 
-SUBMIT_BUTTON = re.compile(r"^\s*(Gửi|Submit)\s*$", re.IGNORECASE)
-NEXT_BUTTON = re.compile(r"^\s*(Tiếp|Next)\s*$", re.IGNORECASE)
 DEFAULT_TIMEOUT_MS = 30_000
+PAGE_SETTLE_MS = 500  # Google chuyển trang bằng JavaScript, URL có thể không đổi
 
 
 class FallbackUnavailableError(RuntimeError):
@@ -88,23 +94,33 @@ class PlaywrightSubmitter:
         try:
             await page.goto(build_prefill_url(structure, response), wait_until="domcontentloaded")
             for _ in range(structure.total_pages + 2):
-                if "/formResponse" in page.url:
+                if await is_confirmation(page):
                     return SubmitOutcome(OutcomeKind.SUCCESS, 200, EngineUsed.PLAYWRIGHT)
-                submit_button = page.get_by_role("button", name=SUBMIT_BUTTON)
-                next_button = page.get_by_role("button", name=NEXT_BUTTON)
-                if await submit_button.count():
-                    await submit_button.first.click()
-                    await page.wait_for_url(re.compile(r"/formResponse"), timeout=self._timeout_ms)
-                    continue
-                if await next_button.count():
-                    before = page.url
-                    await next_button.first.click()
-                    await page.wait_for_load_state("domcontentloaded")
+                await wait_until_rendered(page)
+                await fill_ratings(page, structure, response)
+                submit_button = await find_button(page, FormButton.SUBMIT)
+                if submit_button is not None:
+                    await submit_button.click()
+                    await self._settle(page)
+                    if await is_confirmation(page):
+                        return SubmitOutcome(OutcomeKind.SUCCESS, 200, EngineUsed.PLAYWRIGHT)
                     error = await self._visible_error(page)
-                    if error and page.url == before:
-                        return SubmitOutcome(OutcomeKind.VALIDATION, 400, EngineUsed.PLAYWRIGHT, error=error)
-                    continue
-                break
+                    return SubmitOutcome(
+                        OutcomeKind.VALIDATION, 400, EngineUsed.PLAYWRIGHT,
+                        error=error or "Bấm Gửi nhưng Google không xác nhận đã nhận câu trả lời.",
+                    )
+                next_button = await find_button(page, FormButton.NEXT)
+                if next_button is None:
+                    break
+                before = await page_history(page)
+                await next_button.click()
+                await self._settle(page)
+                if await page_history(page) == before and not await is_confirmation(page):
+                    error = await self._visible_error(page)
+                    return SubmitOutcome(
+                        OutcomeKind.VALIDATION, 400, EngineUsed.PLAYWRIGHT,
+                        error=error or "Bấm Tiếp nhưng form không sang trang sau.",
+                    )
             error = await self._visible_error(page)
             return SubmitOutcome(
                 OutcomeKind.VALIDATION, 400, EngineUsed.PLAYWRIGHT,
@@ -120,6 +136,11 @@ class PlaywrightSubmitter:
             return SubmitOutcome(OutcomeKind.NETWORK, 0, EngineUsed.PLAYWRIGHT, error=f"Lỗi trình duyệt: {exc}")
         finally:
             await context.close()
+
+    @staticmethod
+    async def _settle(page: Any) -> None:
+        await page.wait_for_load_state("domcontentloaded")
+        await page.wait_for_timeout(PAGE_SETTLE_MS)
 
     @staticmethod
     async def _visible_error(page: Any) -> str | None:

@@ -50,6 +50,12 @@ export function computeReadiness(
       if (isText(question)) missingTextCount += 1;
     }
   }
+  // Câu bắt buộc app chưa điền được: Google sẽ từ chối mọi phản hồi (BUG-017) → không cho chạy
+  for (const item of structure.unsupported_items ?? []) {
+    if (item.is_required) {
+      issues.push({ entryId: `unsupported-${item.item_id}`, pageIndex: item.page_index, message: `${item.title}: kiểu câu hỏi app chưa điền được` });
+    }
+  }
   return {
     issues,
     configuredCount: structure.questions.length - issues.length,

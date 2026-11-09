@@ -11,6 +11,7 @@ import { PageRail } from '@/components/workspace/PageRail';
 import { QuestionList } from '@/components/workspace/QuestionList';
 import { RunSettingsPanel } from '@/components/workspace/run-settings/RunSettingsPanel';
 import { SourceTabs, type WorkspaceTab } from '@/components/workspace/SourceTabs';
+import { UnsupportedItemsAlert } from '@/components/workspace/UnsupportedItemsAlert';
 import { WorkspaceHeader } from '@/components/workspace/WorkspaceHeader';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { computeReadiness } from '@/lib/readiness';
@@ -30,6 +31,7 @@ function WorkspaceBody({ form }: { form: FormDetail }) {
     <>
       <StepIndicator current={2} />
       <WorkspaceHeader form={form} />
+      <UnsupportedItemsAlert structure={form.structure} />
       <SourceTabs active={tab} onChange={(next) => setParams({ tab: next }, { replace: true })} counts={{ spss: config.groups.length }} />
       <div className={tab === 'weights' ? 'grid items-start gap-5 lg:grid-cols-[230px_minmax(0,1fr)_320px]' : 'grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]'}>
         {tab === 'weights' && <PageRail structure={form.structure} readiness={readiness} />}

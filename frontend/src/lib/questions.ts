@@ -11,6 +11,7 @@ export const TYPE_LABELS: Record<string, string> = {
   CHECKBOX_GRID: 'Lưới hộp kiểm',
   DATE: 'Ngày',
   TIME: 'Giờ',
+  RATING: 'Đánh giá (sao)',
 };
 
 export const isText = (q: ParsedQuestion): boolean =>

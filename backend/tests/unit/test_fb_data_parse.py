@@ -228,3 +228,46 @@ def test_is_required_mac_dinh_false_khi_thieu() -> None:
     item = [80, "Câu", None, 0, [[8001]]]
     q = _parse([item]).questions[0]
     assert q.entry_id == "8001" and q.is_required is False
+
+
+# ---------- BUG-017: câu Đánh giá (sao) và câu kiểu chưa hỗ trợ ----------
+def _rating(item_id: int, entry: int, levels: int = 5, required: int = 1) -> list:
+    return [item_id, "Mức độ quan trọng?", None, 18, [[entry, [[str(i)] for i in range(1, levels + 1)], required, None, None,
+            None, None, None, None, None, None, None, None, None, [1]]]]
+
+
+def test_cau_danh_gia_doc_nhu_thang_do() -> None:
+    [q] = _parse([_rating(1, 11, levels=10)]).questions
+    assert q.type_id == QuestionType.RATING and q.type_name == "RATING"
+    assert q.is_single_choice and not q.is_multi_select and q.is_required
+    assert [o.value for o in q.options] == [str(i) for i in range(1, 11)]
+
+
+def test_cau_danh_gia_khong_co_muc_bi_bo() -> None:
+    item = _rating(1, 11)
+    item[4][0][1] = []
+    assert _parse([item]).questions == []
+
+
+def test_kieu_chua_ho_tro_duoc_ghi_lai_khong_bo_qua_am_tham() -> None:
+    upload = [5, "Tải CV lên", None, 13, [[55, None, 1]]]
+    optional = [6, "Ảnh đại diện", None, 13, [[66, None, 0]]]
+    structure = _parse([_mc(1, 11, [["A"], ["B"]]), upload, optional])
+    assert [q.entry_id for q in structure.questions] == ["11"]
+    assert [(u.item_id, u.title, u.type_id, u.is_required) for u in structure.unsupported_items] == [
+        (5, "Tải CV lên", 13, True), (6, "Ảnh đại diện", 13, False),
+    ]
+    assert [u.item_id for u in structure.blocking_unsupported] == [5]
+
+
+@pytest.mark.parametrize("static_type", [6, 11, 12])
+def test_phan_tu_tinh_khong_tinh_la_chua_ho_tro(static_type: int) -> None:
+    assert _parse([[9, "Ảnh / tiêu đề", None, static_type, None]]).unsupported_items == []
+
+
+def test_cau_truc_cu_khong_co_truong_moi_van_doc_duoc() -> None:
+    from app.schemas.form_schema import ParsedFormStructure
+
+    old = _parse([_mc(1, 11, [["A"], ["B"]])]).model_dump(mode="json")
+    old.pop("unsupported_items")
+    assert ParsedFormStructure.model_validate(old).unsupported_items == []

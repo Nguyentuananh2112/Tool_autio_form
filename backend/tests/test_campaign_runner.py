@@ -131,3 +131,38 @@ async def test_resume_skips_already_sent(campaign_id: uuid.UUID) -> None:
     assert await _runner(campaign_id, second_http, FakeBrowser(), EventBus(), CampaignControl(str(campaign_id))).run() == CampaignStatus.COMPLETED
     assert await _counts(campaign_id) == ("COMPLETED", 6, 0, 6)
     assert second_http.calls == 6 - completed
+
+
+class RejectingBrowser(FakeBrowser):
+    async def submit(self, structure: Any, response: Any) -> SubmitOutcome:
+        self.calls += 1
+        return SubmitOutcome(OutcomeKind.VALIDATION, 400, EngineUsed.PLAYWRIGHT, error="Không tìm thấy nút")
+
+
+async def test_form_tu_choi_lien_tiep_thi_tu_tam_dung(campaign_id: uuid.UUID) -> None:
+    """BUG-017: form có câu bắt buộc bị bỏ qua → mọi lần đều 400; dừng sau 5 lần thay vì đốt hết lượt."""
+    async with AsyncSessionLocal() as session:
+        campaign = await session.get(Campaign, campaign_id)
+        campaign.total_target = 20
+        campaign.schedule_config = {"mode": "BURST", "concurrency": 1}
+        await session.commit()
+    control = CampaignControl(str(campaign_id))
+    task = asyncio.create_task(
+        _runner(campaign_id, ScriptedHttp([OutcomeKind.VALIDATION] * 50), RejectingBrowser(), EventBus(), control).run()
+    )
+    for _ in range(300):
+        await asyncio.sleep(0.01)
+        if (await _counts(campaign_id))[0] == "PAUSED":
+            break
+    status, completed, failed, _ = await _counts(campaign_id)
+    assert status == "PAUSED" and completed == 0 and failed == 5
+    assert "5 phản hồi liên tiếp" in (control.pause_reason or "")
+    control.cancel()
+    await asyncio.wait_for(task, timeout=5)
+
+
+async def test_that_bai_xen_ke_thanh_cong_khong_tam_dung(campaign_id: uuid.UUID) -> None:
+    script = [OutcomeKind.VALIDATION, OutcomeKind.SUCCESS] * 3
+    status = await _runner(campaign_id, ScriptedHttp(script), RejectingBrowser(), EventBus(), CampaignControl(str(campaign_id))).run()
+    assert status == CampaignStatus.COMPLETED
+    assert await _counts(campaign_id) == ("COMPLETED", 3, 3, 6)

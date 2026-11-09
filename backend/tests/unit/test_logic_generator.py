@@ -185,3 +185,34 @@ def test_soat_mau_thu_dem_cau_mau_chua_phan_loai() -> None:
 
     logic = sample_logic(text_attitudes=[TextAttitude(entry_id=COMMENT, group_id="brand", labels={POS: TextSentiment.POSITIVE})])
     assert review_logic(FORM, RULES, [], logic, n=60).unlabeled_texts == 2  # "Bình thường" và NEG chưa có nhãn
+
+
+# ------------------------------------------------------------- BUG-017
+def test_cau_bat_buoc_kieu_chua_ho_tro_chan_chay() -> None:
+    from app.schemas.form_schema import UnsupportedItem
+    from app.services.spss.validation import GeneratorConfigError
+
+    form = FORM.model_copy(update={"unsupported_items": [
+        UnsupportedItem(item_id=1, title="Tải CV lên", type_id=13, page_index=0, is_required=True),
+        UnsupportedItem(item_id=2, title="Ảnh", type_id=13, page_index=0, is_required=False),
+    ]})
+    with pytest.raises(GeneratorConfigError) as info:
+        SurveyDataGenerator(form, RULES).validate()
+    assert any("Tải CV lên" in e for e in info.value.errors)
+    assert not any("Ảnh" in e for e in info.value.errors)
+
+
+def test_cau_danh_gia_sinh_va_gui_nhu_thang_do() -> None:
+    from app.schemas.form_schema import QuestionType
+    from app.services.spss.answers import build_payload_tuples
+    from tests.unit.spss_factories import form as build_form
+    from tests.unit.spss_factories import option, question, section
+
+    rating = question("77", QuestionType.RATING, [option(str(i)) for i in range(1, 11)], required=True)
+    structure = build_form([section(0, None)], [rating])
+    rule = QuestionRuleConfig(entry_id="77", question_type=18, weights={str(i): (30 if i >= 8 else 2) for i in range(1, 11)})
+    responses = SurveyDataGenerator(structure, [rule], seed=1).generate(300)
+    values = [int(r.answers["77"].values[0]) for r in responses]
+    assert np.mean([v >= 8 for v in values]) > 0.8
+    assert ("entry.77", str(values[0])) in build_payload_tuples(responses[0], None)
+    assert responses[0].answers["77"].numeric_value == float(values[0])

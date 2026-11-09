@@ -17,6 +17,8 @@ from app.schemas.form_schema import (
     ParsedQuestion,
     ParsedSection,
     QuestionType,
+    STATIC_ITEM_TYPES,
+    UnsupportedItem,
     decode_jump,
 )
 from app.services.form_errors import FormRequiresLoginError, FormStructureError
@@ -42,6 +44,7 @@ SIMPLE_QUESTION_TYPES: frozenset[int] = frozenset(
         QuestionType.LINEAR_SCALE,
         QuestionType.DATE,
         QuestionType.TIME,
+        QuestionType.RATING,
     }
 )
 
@@ -155,6 +158,9 @@ def _parse_simple_question(
         _safe_get(meta, 1), allow_jump=type_id in (QuestionType.MULTIPLE_CHOICE, QuestionType.DROPDOWN)
     )
     scale_low = scale_high = None
+    if type_id == QuestionType.RATING and not options:
+        logger.warning("Câu đánh giá '%s' không có mức nào, bỏ qua", title)
+        return None
     if type_id == QuestionType.LINEAR_SCALE:
         labels = _safe_get(meta, 3, default=[])
         scale_low = _clean_text(_safe_get(labels, 0))
@@ -237,6 +243,7 @@ def parse_fb_public_load_data(
         ParsedSection(page_index=0, section_item_id=None, title=title, description=form_description)
     ]
     questions: list[ParsedQuestion] = []
+    unsupported: list[UnsupportedItem] = []
 
     for item in items:
         if not isinstance(item, list) or len(item) < 4:
@@ -278,9 +285,15 @@ def parse_fb_public_load_data(
             )
             if question is not None:
                 questions.append(question)
-        else:
-            # 6 = Tiêu đề/mô tả, 11 = Hình ảnh, 12 = Video... không cần điền
+        elif type_id in STATIC_ITEM_TYPES:
             logger.debug("Bỏ qua phần tử tĩnh type_id=%s item_id=%s", type_id, item_id)
+        else:
+            # Kiểu câu hỏi chưa hỗ trợ: KHÔNG được bỏ qua âm thầm (BUG-017) — ghi lại để báo người dùng
+            logger.warning("Câu hỏi kiểu %s chưa hỗ trợ: '%s' (item_id=%s)", type_id, item_title, item_id)
+            unsupported.append(UnsupportedItem(
+                item_id=item_id, title=item_title or f"Câu hỏi {item_id}", type_id=type_id, page_index=page_index,
+                is_required=bool(_safe_get(item, 4, 0, 2, default=0)),
+            ))
 
     known_sections = {s.section_item_id for s in sections if s.section_item_id is not None}
     for question in questions:
@@ -301,4 +314,5 @@ def parse_fb_public_load_data(
         total_pages=page_index + 1,
         sections=sections,
         questions=questions,
+        unsupported_items=unsupported,
     )

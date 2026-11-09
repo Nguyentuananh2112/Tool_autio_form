@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.models import Form
 from app.schemas.campaign_schema import QuestionRuleConfig
 from app.schemas.logic_api import LogicReviewRequest, LogicReviewResult
+from app.schemas.form_schema import ParsedFormStructure
 from app.schemas.logic_schema import LogicMap
 from app.services.campaign_service import get_form, structure_of
 from app.services.demo_form import build_demo_logic
@@ -20,13 +21,30 @@ from app.services.gemini_keys import AiKeysUnavailableError, AiUnreachableError,
 from app.services.logic.ai_reader import read_form_logic
 from app.services.logic.review import review_logic
 from app.services.logic.text_classifier import classify_texts
-from app.services.logic.validation import LogicMapInvalidError, ensure_valid
+from app.services.logic.validation import LogicMapInvalidError, ensure_valid, validate_logic
 
 logger = logging.getLogger(__name__)
 
 
 def stored_logic(form: Form) -> LogicMap | None:
     return LogicMap.model_validate(form.logic_map) if form.logic_map else None
+
+
+def refresh_form(form: Form, structure: ParsedFormStructure) -> None:
+    """Form vừa phân tích lại: câu hỏi có thể đã đổi → bản đồ logic phải soát lại trước khi chạy.
+
+    Bản đồ còn khớp form thì giữ (bỏ cờ xác nhận); trỏ tới câu / đáp án không còn thì xoá để AI đọc lại.
+    """
+    changed = form.parsed_structure != structure.model_dump(mode="json")
+    form.title, form.submit_url = structure.title, structure.submit_url
+    form.parsed_structure = structure.model_dump(mode="json")
+    logic = stored_logic(form)
+    if logic is None or not changed:
+        return
+    if validate_logic(structure, logic):
+        form.logic_map = None
+    else:
+        form.logic_map = logic.model_copy(update={"confirmed": False}).model_dump(mode="json")
 
 
 async def _store(session: AsyncSession, form: Form, logic: LogicMap) -> LogicMap:
