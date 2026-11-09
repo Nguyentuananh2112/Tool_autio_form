@@ -77,6 +77,7 @@ async def load_plan(session: AsyncSession, campaign_id: uuid.UUID) -> CampaignPl
             seed=campaign_seed(campaign.id),
             text_mutator=micro_mutate,
             logic=LogicMap.model_validate(campaign.logic_map) if campaign.logic_map else None,
+            humanize=True,
         )
         responses = await asyncio.to_thread(generator.generate, campaign.total_target)
 

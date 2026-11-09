@@ -170,7 +170,7 @@ async def trial_submit(payload: TrialSubmitRequest, session: DbSession, runner_k
     form = await campaign_service.get_form(session, payload.form_id)
     structure = campaign_service.structure_of(form)
     # Có bản đồ logic (kể cả chưa xác nhận) thì gửi thử cũng theo logic, giống lúc chạy thật
-    generator = SurveyDataGenerator(structure, payload.rules, payload.spss_groups, logic=stored_logic(form))
+    generator = SurveyDataGenerator(structure, payload.rules, payload.spss_groups, logic=stored_logic(form), humanize=True)
     response = (await asyncio.to_thread(generator.generate, 1))[0]
     tuples = build_payload_tuples(response, structure.fbzx)
     if form.is_demo or payload.dry_run:

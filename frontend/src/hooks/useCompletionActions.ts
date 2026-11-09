@@ -32,6 +32,8 @@ export function useCompletionActions(summary: CampaignSummary, onDone: () => voi
         return guarded(action, async () => navigate(`/campaigns/${id}`));
       case 'log':
         return guarded(action, async () => navigate(`/campaigns/${id}#nhat-ky`));
+      case 'again':
+        return guarded(action, async () => navigate(`/forms/${summary.form_id}?tab=weights`));
       case 'config':
         return guarded(action, async () => navigate(`/forms/${summary.form_id}?tab=weights`));
       case 'retry':

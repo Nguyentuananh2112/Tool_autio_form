@@ -27,7 +27,7 @@ export function CampaignResultPanel({ campaign }: { campaign: CampaignRead }) {
         </div>
       </div>
       <CompletionContent summary={data} />
-      <CompletionActions summary={data} actions={view.actions.filter((a) => a !== 'view' && a !== 'log')} onDone={() => undefined} />
+      <CompletionActions summary={data} actions={view.actions.filter((a) => a !== 'view' && a !== 'log' && a !== 'again')} onDone={() => undefined} />
     </Card>
   );
 }

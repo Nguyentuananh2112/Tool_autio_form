@@ -74,3 +74,22 @@ describe('thông báo kết thúc ở mọi màn hình (màn 13)', () => {
     expect(campaignsApi.summary).not.toHaveBeenCalled();
   });
 });
+
+describe('nút Tạo thêm phản hồi', () => {
+  it('thông báo "Đã gửi xong" có nút quay về Cấu hình của đúng form', async () => {
+    vi.mocked(campaignsApi.summary).mockResolvedValue({ ...partial, completed_count: 50, failed_count: 0, reasons: [] });
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <CompletionNotifier />
+        <Routes>
+          <Route path="/" element={<p>Tổng quan</p>} />
+          <Route path="/forms/:formId" element={<p>Cấu hình form</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await act(async () => { await vi.advanceTimersByTimeAsync(3_100); });
+    expect(await screen.findByText('Đã gửi xong 50/50 phản hồi')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo thêm phản hồi' }));
+    expect(await screen.findByText('Cấu hình form')).toBeInTheDocument();
+  });
+});

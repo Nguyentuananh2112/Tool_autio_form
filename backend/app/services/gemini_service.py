@@ -16,11 +16,12 @@ from pydantic import BaseModel, ValidationError
 
 from app.services.gemini_call import GeminiCallError, Sleep, generate_json
 from app.services.gemini_keys import run_with_keys
+from app.services.humanize.ai_cleanup import clean_ai_text
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_MODEL = "gemini-flash-latest"
-DEFAULT_PERSONA = "Sinh viên đại học tại Việt Nam, trả lời tự nhiên, đa dạng độ dài từ 5 đến 25 từ"
+DEFAULT_PERSONA = "người Việt Nam bình thường, đủ độ tuổi và nghề nghiệp, phần lớn trả lời trên điện thoại"
 MAX_PER_REQUEST = 50
 MAX_POOL_SIZE = 500
 
@@ -36,19 +37,48 @@ class GeneratedAnswersResponse(BaseModel):
     answers: list[str]
 
 
+# Dấu hiệu văn AI mà người trả lời khảo sát gần như không dùng (SPEC-022)
+AI_PHRASES = (
+    "nâng cao trải nghiệm", "tối ưu hóa", "đa dạng hóa", "vượt trội", "hài lòng tuyệt đối", "điểm cộng lớn",
+    "góp phần", "mang lại giá trị", "đáp ứng tốt nhu cầu", "không ngừng cải thiện", "một cách hiệu quả",
+)
+
+
 def build_prompt(
     question_title: str, survey_context: str, count: int, persona_hint: str, avoid: list[str]
 ) -> str:
+    """Câu lệnh để Gemini viết như NHIỀU người thật khác nhau, không như một trợ lý AI (SPEC-022).
+
+    Tỷ lệ độ dài / câu qua loa theo nghiên cứu câu hỏi mở (Pew: trả lời trên điện thoại ~80 ký tự;
+    DISQO, GESIS: "không có / không biết" là câu trả lời hợp lệ, hay gặp). Chữ hoa, dấu câu, viết tắt,
+    gõ không dấu do app tự thêm theo kiểu gõ của từng người (services/humanize) nên ở đây chỉ cần nội dung.
+    """
     avoid_block = ""
     if avoid:
         sample = "\n".join(f"- {answer}" for answer in avoid[-30:])
-        avoid_block = f"\nKHÔNG lặp lại các câu đã có sau:\n{sample}\n"
+        avoid_block = f"\nKHÔNG lặp lại hay viết na ná các câu đã có:\n{sample}\n"
+    banned = ", ".join(f'"{phrase}"' for phrase in AI_PHRASES)
+    rules = [
+        "Độ dài rất khác nhau: khoảng 1/3 chỉ 1–5 từ (VD 'giao nhanh', 'giá hơi cao'), khoảng 2/5 từ 6–15 từ, "
+        "phần còn lại dài hơn, vài câu kể chuyện riêng cụ thể (VD 'lần trước đặt sách bị móp góc mà đổi trả lâu').",
+        "Khoảng 1/8 trả lời qua loa / không có ý kiến như người thật vẫn hay làm "
+        "(VD 'không có gì', 'chưa nghĩ ra', 'như giờ là ổn rồi', 'bình thường').",
+        "Quan điểm khác nhau: có người khen, có người chê thẳng, có người trung lập; mỗi người chỉ nói 1–2 ý họ quan tâm.",
+        "Văn nói đời thường như nhắn tin: được dùng 'thì', 'kiểu', 'cũng', 'hơi', 'chắc', 'nói chung', câu cụt, "
+        "không cần đủ chủ ngữ vị ngữ.",
+        "TUYỆT ĐỐI KHÔNG: gạch đầu dòng, đánh số, ngoặc kép, gạch ngang dài, chấm than; không mở đầu bằng "
+        "'Theo tôi' / 'Tôi nghĩ rằng'; không nhắc lại câu hỏi; không viết như chuyên gia hay quảng cáo; "
+        f"không dùng các cụm sáo rỗng: {banned}.",
+        "Viết tiếng Việt có dấu bình thường (app tự xử lý chữ hoa, dấu câu, viết tắt).",
+        "Các ví dụ trong ngoặc chỉ để hiểu ý — KHÔNG chép lại nguyên văn; câu nào cũng phải bám đúng nội dung câu hỏi.",
+    ]
+    bullet_list = "\n".join(f"- {rule}" for rule in rules)
     return (
-        f'Bạn đang tham gia điền một khảo sát có chủ đề: "{survey_context}".\n'
-        f'Câu hỏi tự luận là: "{question_title}".\n'
-        f"Phong cách người điền: {persona_hint}.\n"
-        f"Hãy sinh ra đúng {count} câu trả lời hoàn toàn khác nhau, tự nhiên như người thật gõ "
-        "(có câu ngắn gọn, câu chi tiết, không dùng văn phong liệt kê máy móc của AI)."
+        f'Khảo sát chủ đề: "{survey_context}".\n'
+        f'Câu hỏi tự luận: "{question_title}".\n'
+        f"Hãy viết đúng {count} câu trả lời của {count} NGƯỜI KHÁC NHAU ({persona_hint}), "
+        "như họ thật sự gõ vào ô trả lời:\n"
+        f"{bullet_list}"
         f"{avoid_block}"
     )
 
@@ -120,7 +150,7 @@ async def _pool_with_client(
             break
         prompt = build_prompt(question_title, survey_context or question_title, need, persona_hint, answers)
         for raw in await _generate_once(client, model, prompt, max_retries=max_retries, sleep=sleep):
-            cleaned = " ".join(str(raw).split())
+            cleaned = clean_ai_text(str(raw))
             key_norm = cleaned.casefold()
             if cleaned and key_norm not in seen:
                 seen.add(key_norm)

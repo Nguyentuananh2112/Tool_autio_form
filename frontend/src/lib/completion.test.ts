@@ -25,7 +25,7 @@ describe('completionView (màn 13)', () => {
     expect(view.kind).toBe('success');
     expect(view.title).toBe('Đã gửi xong 50/50 phản hồi');
     expect(view.subtitle).toContain('Google đã xác nhận');
-    expect(view.actions).toEqual(['export', 'view']);
+    expect(view.actions).toEqual(['export', 'again', 'view']);
   });
 
   it('một phần lỗi mạng: gợi ý Gửi lại đúng số phản hồi lỗi', () => {

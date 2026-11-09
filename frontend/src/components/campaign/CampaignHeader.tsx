@@ -1,5 +1,5 @@
-import { Download, Pause, Play } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Download, Pause, Play, RotateCcw } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -14,6 +14,7 @@ function scheduleText(campaign: CampaignRead): string {
 }
 
 export function CampaignHeader({ campaign, controls }: { campaign: CampaignRead; controls: Controls }) {
+  const navigate = useNavigate();
   const canResume = campaign.status === 'PAUSED' || campaign.status === 'FAILED' || campaign.status === 'IDLE';
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
@@ -32,6 +33,12 @@ export function CampaignHeader({ campaign, controls }: { campaign: CampaignRead;
         {canResume && (
           <Button variant="primary" onClick={() => void controls.resume()} loading={controls.busy === 'resume'}>
             <Play aria-hidden className="size-4" />{campaign.status === 'IDLE' ? 'Bắt đầu' : 'Tiếp tục'}
+          </Button>
+        )}
+        {!campaign.is_active && (
+          // Quay về Cấu hình của đúng form này (tỷ lệ, câu mẫu đã đặt vẫn giữ) để chạy thêm đợt mới
+          <Button variant={campaign.status === 'COMPLETED' ? 'primary' : 'secondary'} onClick={() => navigate(`/forms/${campaign.form_id}?tab=weights`)}>
+            <RotateCcw aria-hidden className="size-4" />Tạo thêm phản hồi
           </Button>
         )}
         <Button onClick={() => void controls.exportData('xlsx')} loading={controls.busy === 'export'}><Download aria-hidden className="size-4" />Xuất dữ liệu cho SPSS</Button>

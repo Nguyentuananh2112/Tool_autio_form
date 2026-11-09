@@ -125,3 +125,13 @@
 - **Cài đặt:** `services/campaign_summary.py` (gom lỗi theo loại REJECTED / RATE_LIMITED / NETWORK / BROWSER / FORM_CLOSED / OTHER + cách xử lý), `GET /campaigns/{id}/summary`, `POST /campaigns/{id}/retry-failed`; cột `campaigns.status_reason` lưu lý do trạng thái (tự thêm cho CSDL cũ); `CampaignRead.auto_paused`.
 - **Gửi lại giữ nguyên nội dung:** xoá nhật ký lỗi → các số thứ tự đó quay lại hàng đợi; bộ sinh dùng seed cố định theo chiến dịch + bản đồ logic đã chụp nên sinh ra ĐÚNG phản hồi cũ (Excel: đúng dòng cũ). Nếu form đã được Phân tích lại và đổi câu hỏi thì nội dung theo cấu trúc mới.
 - **Giao diện:** `CompletionNotifier` gắn ở gốc app, theo dõi danh sách chiến dịch (3 giây khi có chiến dịch chạy, 8 giây khi rảnh) → hộp thoại ở mọi màn hình + thông báo Windows khi app không ở trước mặt (Electron `setAppUserModelId`, IPC `window:focus`). Không báo khi người dùng tự Tạm dừng / Dừng. Trang chiến dịch có khung kết quả để xem lại.
+
+### [SPEC-022] Câu tự luận gõ như người thật, không như AI — 2026-11-09 — ĐÃ LÀM
+- **Yêu cầu người dùng:** câu trả lời Gemini sinh không được giống AI (không phải lúc nào cũng hoa đầu dòng, đủ dấu chấm phẩy…), phải giống hành vi người thật.
+- **Nghiên cứu (nguồn):** Pew Research (câu hỏi mở: trả lời trên điện thoại ~80 ký tự, máy tính ~113; câu hỏi đòi dài → nhiều người bỏ trống); DISQO & GESIS/ESRA ("không có / không biết" là câu trả lời hợp lệ, hay gặp; trả lời ngắn dần về cuối khảo sát); nghiên cứu nhận diện văn LLM (arXiv 2507.00838, 2410.16107, ACL StyGenAI 2026: AI đồng đều hơn, từ vựng "sang" hơn, chuẩn ngữ pháp, dùng gạch ngang dài; người thật dao động nhiều); ViLexNorm (EACL 2024: tiếng Việt mạng xã hội hay rút gọn từ, viết tắt, bỏ dấu).
+- **Cài đặt:**
+  - Câu lệnh Gemini (`gemini_service.build_prompt`): viết như N người khác nhau, tỷ lệ độ dài (1/3 rất ngắn), ~1/8 trả lời qua loa, quan điểm khen/chê/trung lập, văn nói; cấm gạch đầu dòng, ngoặc kép, gạch ngang dài, chấm than, "Theo tôi", cụm sáo rỗng; không chép ví dụ.
+  - `humanize/ai_cleanup.py`: gỡ dấu vết AI còn sót trước khi lưu pool.
+  - `humanize/styles.py` + `humanizer.py`: mỗi người điền một kiểu gõ (cẩn thận 25%, thường 40%, lười 20%, không dấu 10%, teencode nhẹ 5%) áp cho MỌI câu tự luận + ô "Mục khác" của họ: chữ hoa / dấu chấm cuối / dấu phẩy theo xác suất, viết tắt (ko, dc, j, r, vs, mn, sp…), gõ không dấu, lỗi gõ ~1–2% số từ, kiểu lười chỉ gõ vế đầu.
+  - Chỉ áp cho dữ liệu tự sinh khi chạy / gửi thử (Excel là dữ liệu thật → giữ nguyên); theo seed chiến dịch nên "Gửi lại phản hồi lỗi" vẫn ra đúng câu cũ.
+- **Kết quả thử thật (Gemini, câu C16 form Tiki):** câu ngắn đời thường, có kể chuyện cụ thể, có chê thẳng; trước khi sửa câu lệnh, AI chép nguyên văn ví dụ → đã cấm.

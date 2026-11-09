@@ -13,6 +13,7 @@ import numpy as np
 from app.schemas.campaign_schema import QuestionRuleConfig, SpssGroupConfig, SpssGroupPreview
 from app.schemas.form_schema import ParsedFormStructure, ParsedQuestion
 from app.schemas.logic_schema import LogicMap
+from app.services.humanize.humanizer import humanize_answers
 from app.services.spss.answers import Answer, GeneratedResponse
 from app.services.spss.columns import Column, ColumnBuilder, TextMutator
 from app.services.spss.group_plan import GroupPlan, plan_group
@@ -34,8 +35,11 @@ class SurveyDataGenerator:
         seed: int | None = None,
         text_mutator: TextMutator | None = None,
         logic: LogicMap | None = None,
+        humanize: bool = False,
     ) -> None:
         self.structure = structure
+        # Câu tự luận gõ như người thật (kiểu gõ riêng của từng người — SPEC-022); tắt khi chỉ xem trước / test
+        self._humanize = humanize
         rule_list = list(rules.values()) if isinstance(rules, Mapping) else list(rules or [])
         self._rules: dict[str, QuestionRuleConfig] = {rule.entry_id: rule for rule in rule_list}
         self._groups: list[SpssGroupConfig] = list(spss_groups or [])
@@ -131,6 +135,8 @@ class SurveyDataGenerator:
             }
             if logic is not None:
                 logic.repair(raw, self._columns.rng)
+            if self._humanize:
+                humanize_answers(raw, self._columns.rng)
             pages = self._navigator.page_history(raw)
             visited = set(pages)
             answers = {e: a for e, a in raw.items() if self._questions[e].page_index in visited}

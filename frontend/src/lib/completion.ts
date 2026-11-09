@@ -5,7 +5,7 @@
 import type { CampaignRead, CampaignSummary } from '@/types/campaign';
 
 export type CompletionKind = 'success' | 'partial' | 'failed';
-export type CompletionAction = 'view' | 'export' | 'log' | 'retry' | 'resume' | 'config';
+export type CompletionAction = 'view' | 'export' | 'again' | 'log' | 'retry' | 'resume' | 'config';
 
 export interface CompletionView {
   kind: CompletionKind;
@@ -39,13 +39,14 @@ export function completionView(summary: CampaignSummary): CompletionView {
     kind,
     title,
     subtitle: `${summary.name} · ${note}`,
-    actions: [kind === 'success' ? 'export' : 'log', primary],
+    actions: kind === 'success' ? ['export', 'again', primary] : ['log', primary],
   };
 }
 
 export const ACTION_LABELS: Record<CompletionAction, (summary: CampaignSummary) => string> = {
   view: () => 'Xem chiến dịch',
   export: () => 'Xuất dữ liệu (Excel)',
+  again: () => 'Tạo thêm phản hồi',
   log: () => 'Xem nhật ký',
   retry: (s) => `Gửi lại ${s.failed_count} phản hồi lỗi`,
   resume: () => 'Tiếp tục',
