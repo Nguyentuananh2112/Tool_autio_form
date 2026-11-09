@@ -24,7 +24,7 @@ const result = (logic: LogicMap): LogicReviewResult => ({
   sample_size: 200, inconsistent_before: 57, inconsistent_after: 0, repaired: 60, regenerated: 2,
   violations: [{ kind: 'RULE', key: 'r1', before: 40, after: 0 }],
   correlations: [{ group_id: 'g1', name: 'Thái độ với quán', before: -0.04, after: 0.61 }],
-  drifts: [], sample: { attitude: 'khá tích cực', answers: { 1: ['Nam'], 4: ['Trà'] } }, logic, ready: true,
+  drifts: [], spss_alpha: [{ group_id: 'c10', name: 'C10', target: 0.85, before: 0.86, after: 0.9 }], unlabeled_texts: 2, sample: { attitude: 'khá tích cực', answers: { 1: ['Nam'], 4: ['Trà'] } }, logic, ready: true,
 });
 
 vi.mock('@/api/endpoints', async () => {
@@ -65,6 +65,9 @@ describe('màn Soát logic (artboard 11)', () => {
     expect(screen.getByText(/1 nhóm thái độ \(2 câu\), 1 ràng buộc, 1 ô loại trừ/)).toBeInTheDocument();
     expect(screen.getByText('Luôn')).toBeInTheDocument();
     expect(logicApi.analyze).not.toHaveBeenCalled();
+    expect(screen.getByText(/Alpha nhóm SPSS "C10" \(mục tiêu 0,85\)/)).toBeInTheDocument();
+    expect(screen.getByText(/cao hơn mục tiêu/)).toBeInTheDocument();
+    expect(screen.getByText(/2 câu tự luận mẫu chưa phân loại/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Xác nhận & chạy/ }));
     expect(await screen.findByText('Trang chiến dịch')).toBeInTheDocument();

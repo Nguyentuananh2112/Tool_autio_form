@@ -8,6 +8,14 @@ import { Card } from '@/components/ui/Card';
 import { TextInput } from '@/components/ui/Field';
 import type { AppSettingsRead } from '@/types/settings';
 
+/** Thứ tự dùng key: key riêng → key chung của app → key dự phòng (SPEC-020). */
+function keyStatus(settings: AppSettingsRead | null): string {
+  if (!settings) return '';
+  if (settings.gemini_user_key) return `● Đang dùng key riêng của bạn (ưu tiên trước key chung) · mô hình ${settings.gemini_model}`;
+  if (settings.gemini_shared_key) return '● App có sẵn key chung — bạn không cần nhập key. Chỉ dán key riêng khi app báo hết lượt AI.';
+  return 'Chưa có key — Soát logic và sinh câu tự luận bằng AI cần một API key Gemini.';
+}
+
 export function GeminiKeySection({ settings, onSaved }: { settings: AppSettingsRead | null; onSaved: () => void }) {
   const id = useId();
   const [key, setKey] = useState('');
@@ -37,12 +45,12 @@ export function GeminiKeySection({ settings, onSaved }: { settings: AppSettingsR
       <h2 id="s-ai" className="m-0 text-[17px] font-semibold">Gemini AI</h2>
       <label htmlFor={id} className="text-[13px] font-medium text-muted">API key</label>
       <div className="flex flex-wrap gap-2">
-        <TextInput id={id} type="password" autoComplete="off" value={key} placeholder={settings?.gemini_key_configured ? '•••••••• (đã lưu — nhập key mới để thay)' : 'Dán API key Gemini (AIza… hoặc AQ.…)'} onChange={(e) => setKey(e.target.value)} className="min-w-[280px] flex-1 font-mono" />
+        <TextInput id={id} type="password" autoComplete="off" value={key} placeholder={settings?.gemini_user_key ? '•••••••• (đã lưu — nhập key mới để thay)' : 'Dán API key Gemini (AIza… hoặc AQ.…)'} onChange={(e) => setKey(e.target.value)} className="min-w-[280px] flex-1 font-mono" />
         <Button variant="primary" disabled={key.trim().length < 10} loading={busy === 'save'} onClick={() => void run('save')}>Lưu key</Button>
-        {settings?.gemini_key_configured && <Button variant="danger" loading={busy === 'delete'} onClick={() => void run('delete')}>Xóa key</Button>}
+        {settings?.gemini_user_key && <Button variant="danger" loading={busy === 'delete'} onClick={() => void run('delete')}>Xóa key</Button>}
       </div>
       <span className={settings?.gemini_key_configured ? 'inline-flex items-center gap-1.5 text-[13px] text-ok' : 'text-[13px] text-muted'}>
-        {settings?.gemini_key_configured ? `● Đã có key · mô hình ${settings.gemini_model}` : 'Chưa có key — câu tự luận cần tự dán câu trả lời mẫu.'}
+        {keyStatus(settings)}
       </span>
       {saved && <Alert tone="ok">Đã lưu. Thử bấm “Sinh 50 câu bằng Gemini” ở một câu tự luận để kiểm tra.</Alert>}
       {error && <Alert tone="bad" title={error.message} />}

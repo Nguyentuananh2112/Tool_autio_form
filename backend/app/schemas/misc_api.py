@@ -22,7 +22,9 @@ class AppSettingsRead(BaseModel):
     app_version: str
     data_dir: str
     gemini_model: str
-    gemini_key_configured: bool
+    gemini_key_configured: bool  # có ít nhất một key dùng được (riêng hoặc chung)
+    gemini_user_key: bool  # người dùng đã dán key riêng (kho bảo mật Windows)
+    gemini_shared_key: bool  # bản cài có key chung nhúng lúc build (khi phát triển: GEMINI_API_KEY)
 
 
 class GeminiKeyUpdate(BaseModel):

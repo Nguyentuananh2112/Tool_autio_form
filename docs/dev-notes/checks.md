@@ -38,3 +38,9 @@
 - Giữ tỷ lệ: C10 TB 3,80 → 3,78; C12 TB 5,81 → 5,88; tỷ lệ B1 giữ nguyên. Alpha C10 0,859 → 0,888 (do kéo câu lệch vào gần).
 - Bài học thiết kế: loại cả phản hồi rồi sinh lại làm lệch tỷ lệ (bớt người "Dưới 18", bớt người đi nhánh nhiều câu) → SỬA TẠI CHỖ câu mâu thuẫn; chỉ so độ lệch theo ngưỡng giữa câu chấm điểm, câu chữ chỉ chặn hai đầu ngược nhau.
 - Trước commit có làm việc với key: `grep -rn "<tiền tố key>" .` chỉ được ra `backend/.env`.
+
+## 2026-11-09 — Kiểm tra bản đóng gói có key chung nhúng sẵn
+- `write_build_secrets.py` (key lấy từ .env, không in ra) → `build_backend.py` → chạy `autoform-backend.exe` với ENVIRONMENT=production, APP_TOKEN, GEMINI_API_KEY rỗng.
+- `GET /settings` trả `gemini_shared_key: true`, không có token → 401. File key trong mã nguồn đã mã hoá (grep key thô = 0).
+- Lượt 1 gọi từ exe: Flash quá 45 giây → Lite 503 (Google quá tải lúc đó) → thêm vòng thử lại thứ hai (RISK-013).
+- Dọn dẹp: đã xoá `app/core/_build_secrets.py`, `dist/`, `build/` (chứa key) sau khi thử.

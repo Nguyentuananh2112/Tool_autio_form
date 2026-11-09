@@ -73,6 +73,14 @@ export interface RatioDrift {
   max_drift_pct: number;
 }
 
+export interface SpssAlphaCheck {
+  group_id: string;
+  name: string;
+  target: number | null;
+  before: number | null;
+  after: number | null;
+}
+
 export interface SampleRespondent {
   attitude: string;
   answers: Record<string, string[]>;
@@ -88,6 +96,8 @@ export interface LogicReviewResult {
   correlations: GroupCorrelation[];
   drifts: RatioDrift[];
   sample: SampleRespondent | null;
+  spss_alpha: SpssAlphaCheck[];
+  unlabeled_texts: number;
   logic: LogicMap;
   ready: boolean;
 }

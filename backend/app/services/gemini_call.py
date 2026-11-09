@@ -21,7 +21,11 @@ logger = logging.getLogger(__name__)
 
 Sleep = Callable[[float], Awaitable[None]]
 
-FALLBACK_MODELS = ("gemini-flash-latest", "gemini-flash-lite-latest")
+# Model bị ngừng (404) được bỏ qua ngay nên ghi thêm tên cụ thể ở cuối không gây hại
+FALLBACK_MODELS = ("gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3.1-flash-lite")
+# Mọi model đều quá tải: chờ rồi đi lại cả chuỗi (đo thật: quá tải thường chỉ kéo dài vài chục giây)
+OVERLOAD_ROUNDS = 2
+OVERLOAD_PAUSE = 10.0
 SERVER_CODES = frozenset({500, 502, 503, 504})
 OVERLOAD_CODES = frozenset({503})
 QUOTA_RETRIES = 1
@@ -63,12 +67,28 @@ async def generate_json(
     """Trả về response thô của Gemini (đọc `.parsed` / `.text`)."""
     config = types.GenerateContentConfig(response_mime_type="application/json", response_schema=schema, temperature=temperature)
     last: GeminiCallError | None = None
+    for round_index in range(OVERLOAD_ROUNDS):
+        if round_index:
+            logger.warning("Mọi model Gemini đều quá tải, chờ %.0f giây rồi thử lại cả chuỗi", OVERLOAD_PAUSE)
+            await sleep(OVERLOAD_PAUSE)
+        response, last = await _try_models(client, model, prompt, config, max_retries, sleep, timeout)
+        if response is not None:
+            return response
+    assert last is not None
+    raise last
+
+
+async def _try_models(
+    client: Any, model: str, prompt: str, config: Any, max_retries: int, sleep: Sleep, timeout: float
+) -> tuple[Any, GeminiCallError | None]:
+    """Một lượt qua chuỗi model. Trả (response, None) khi thành công, (None, lỗi cuối) khi mọi model quá tải."""
+    last: GeminiCallError | None = None
     for candidate in _models(model):
         for attempt in range(max_retries + 1):
             try:
                 return await asyncio.wait_for(
                     client.aio.models.generate_content(model=candidate, contents=prompt, config=config), timeout
-                )
+                ), None
             except TimeoutError:
                 logger.warning("Gemini (%s) không trả lời sau %.0f giây, chuyển model dự phòng", candidate, timeout)
                 last = GeminiCallError("Gemini đang quá tải. Hãy thử lại sau ít phút.", 503)
@@ -88,5 +108,4 @@ async def generate_json(
                 if code in SERVER_CODES:
                     break
                 raise last from exc
-    assert last is not None
-    raise last
+    return None, last

@@ -167,3 +167,21 @@ def test_soat_mau_thu_khong_bao_xe_dich_o_loai_tru_va_dao_dong_ngau_nhien() -> N
     [corr] = result.correlations
     assert corr.after > corr.before + 0.3
     assert result.sample is not None and result.sample.attitude
+
+
+def test_soat_mau_thu_bao_alpha_nhom_spss_truoc_va_sau() -> None:
+    from app.services.logic.review import review_logic
+
+    result = review_logic(FORM, RULES, [_scale_group()], sample_logic(), n=400)
+    [check] = result.spss_alpha
+    assert check.group_id == "g" and check.target == 0.8
+    assert check.before is not None and check.after is not None
+    assert abs(check.before - 0.8) < 0.08  # cách cũ đạt gần mục tiêu
+    assert check.after >= check.before - 0.02  # kéo câu lệch vào gần → không giảm
+
+
+def test_soat_mau_thu_dem_cau_mau_chua_phan_loai() -> None:
+    from app.services.logic.review import review_logic
+
+    logic = sample_logic(text_attitudes=[TextAttitude(entry_id=COMMENT, group_id="brand", labels={POS: TextSentiment.POSITIVE})])
+    assert review_logic(FORM, RULES, [], logic, n=60).unlabeled_texts == 2  # "Bình thường" và NEG chưa có nhãn

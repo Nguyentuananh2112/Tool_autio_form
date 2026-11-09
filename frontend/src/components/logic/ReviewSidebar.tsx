@@ -47,6 +47,9 @@ export function ReviewResultCard({ result, logic, questions }: { result: LogicRe
       : kind === 'EXCLUSIVE' ? questionShortLabel(byEntry.get(key), order.get(key))
         : logic.attitude_groups.find((g) => g.group_id === key)?.name ?? key;
 
+  // Lệch hơn 0,03 so với mục tiêu mới đáng báo (sai số mẫu thử 200 người ~ ±0,02)
+  const highAlpha = result.spss_alpha.filter((g) => g.after !== null && g.target !== null && g.after > g.target + 0.03);
+
   return (
     <Card aria-labelledby="h-check" aria-live="polite" className="flex flex-col gap-3 p-5">
       <h2 id="h-check" className="m-0 text-base font-semibold">Kết quả soát {result.sample_size} phản hồi thử</h2>
@@ -63,12 +66,25 @@ export function ReviewResultCard({ result, logic, questions }: { result: LogicRe
             {result.correlations.map((c) => (
               <Row key={c.group_id} label={`Độ khớp trong "${c.name}"`} before={c.before === null ? '—' : formatDecimal(c.before)} after={c.after === null ? '—' : formatDecimal(c.after)} />
             ))}
+            {result.spss_alpha.map((a) => (
+              <Row key={`alpha-${a.group_id}`} label={`Alpha nhóm SPSS "${a.name}"${a.target !== null ? ` (mục tiêu ${formatDecimal(a.target)})` : ''}`} before={a.before === null ? '—' : formatDecimal(a.before)} after={a.after === null ? '—' : formatDecimal(a.after)} />
+            ))}
             {result.violations.filter((v) => v.before > 0 || v.after > 0).slice(0, 6).map((v) => (
               <Row key={`${v.kind}-${v.key}`} label={`${VIOLATION_KIND_LABELS[v.kind]}: ${keyLabel(v.kind, v.key)}`} before={String(v.before)} after={String(v.after)} />
             ))}
           </tbody>
         </table>
       </div>
+      {highAlpha.length > 0 && (
+        <p className="m-0 rounded-[10px] bg-accent-soft px-3 py-2.5 text-[13px] text-accent">
+          Alpha của {highAlpha.map((g) => `"${g.name}"`).join(', ')} cao hơn mục tiêu vì các câu được giữ &quot;sàn sàn&quot; nhau. Muốn sát mục tiêu hơn: giảm r (hoặc Alpha mục tiêu) của nhóm ở bước Cấu hình, hoặc chọn độ đồng đều &quot;Đa dạng&quot;.
+        </p>
+      )}
+      {result.unlabeled_texts > 0 && (
+        <p className="m-0 text-[13px] text-muted">
+          {result.unlabeled_texts} câu tự luận mẫu chưa phân loại được khen / chê (Gemini đang bận) nên tạm coi là trung lập. Bấm &quot;Soát lại&quot; sau ít phút để thử lại.
+        </p>
+      )}
       {result.drifts.length > 0 && (
         <div className="flex flex-col gap-1 rounded-[10px] bg-warn-soft px-3 py-2.5 text-[13px] text-warn">
           <strong>Tỷ lệ một vài câu xê dịch để giữ câu trả lời khớp nhau:</strong>

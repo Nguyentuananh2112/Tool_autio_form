@@ -156,3 +156,18 @@ async def test_csdl_cu_duoc_them_cot_logic_map() -> None:
     assert "logic_map" in columns and "logic_map" in campaign_columns
     await init_db()  # chạy lại không lỗi
     await reset_database()
+
+
+@pytest.mark.parametrize(("keys", "user", "shared", "configured"), [
+    ([(KeySlot.USER, None), (KeySlot.SHARED, None), (KeySlot.BACKUP, None)], False, False, False),
+    ([(KeySlot.USER, None), (KeySlot.SHARED, "s"), (KeySlot.BACKUP, None)], False, True, True),
+    ([(KeySlot.USER, None), (KeySlot.SHARED, None), (KeySlot.BACKUP, "b")], False, True, True),
+    ([(KeySlot.USER, "u"), (KeySlot.SHARED, None), (KeySlot.BACKUP, None)], True, False, True),
+])
+async def test_cai_dat_cho_biet_key_rieng_va_key_chung(
+    client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch, keys: list, user: bool, shared: bool, configured: bool
+) -> None:
+    monkeypatch.setattr("app.api.settings_router.candidate_keys", lambda: keys)
+    body = (await client.get(f"{API}/settings")).json()
+    assert (body["gemini_user_key"], body["gemini_shared_key"], body["gemini_key_configured"]) == (user, shared, configured)
+    assert all(value not in {"u", "s", "b"} for value in body.values())  # không bao giờ trả key ra ngoài

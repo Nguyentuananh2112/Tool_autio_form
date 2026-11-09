@@ -49,8 +49,24 @@ def test_giai_ma_chuoi_rong_la_none() -> None:
     assert build_secrets.decode("") is None
 
 
-def test_ban_chay_tu_ma_nguon_khong_co_key_nhung() -> None:
+def test_khong_co_file_key_nhung_thi_khong_co_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    import sys
+
+    monkeypatch.setitem(sys.modules, "app.core._build_secrets", None)  # import sẽ báo ImportError
     assert build_secrets.embedded_keys() == (None, None)
+
+
+def test_doc_key_nhung_tu_file_sinh_luc_build(monkeypatch: pytest.MonkeyPatch) -> None:
+    import sys
+    from types import ModuleType
+
+    fake = ModuleType("app.core._build_secrets")
+    fake.SHARED, fake.BACKUP = build_secrets.encode("shared-123"), ""
+    monkeypatch.setitem(sys.modules, "app.core._build_secrets", fake)
+    import app.core as core
+
+    monkeypatch.setattr(core, "_build_secrets", fake, raising=False)
+    assert build_secrets.embedded_keys() == ("shared-123", None)
 
 
 def test_candidate_keys_thu_tu_va_dung_key_dev_lam_key_chung(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -197,7 +213,19 @@ async def test_key_sai_khong_thu_lai() -> None:
 
 
 async def test_moi_model_deu_qua_tai_bao_loi_de_hieu() -> None:
-    client, _ = _client([_api_error(503)] * 20)
+    client, _ = _client([_api_error(503)] * 40)
     with pytest.raises(GeminiCallError, match="quá tải") as info:
         await generate_json(client, "m", "p", dict, temperature=0, sleep=_no_sleep)
     assert info.value.code == 503
+
+
+async def test_moi_model_qua_tai_cho_roi_di_lai_ca_chuoi() -> None:
+    waits: list[float] = []
+
+    async def record_sleep(seconds: float) -> None:
+        waits.append(seconds)
+
+    client, models = _client([_api_error(503)] * (1 + len(FALLBACK_MODELS)) + ["ok"])  # cả chuỗi "m" + dự phòng
+    assert await generate_json(client, "m", "p", dict, temperature=0, sleep=record_sleep) == "ok"
+    assert models.models == ["m", *FALLBACK_MODELS, "m"]
+    assert waits == [10.0]

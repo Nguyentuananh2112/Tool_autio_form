@@ -5,6 +5,8 @@ export interface AppSettingsRead {
   data_dir: string;
   gemini_model: string;
   gemini_key_configured: boolean;
+  gemini_user_key: boolean;
+  gemini_shared_key: boolean;
 }
 
 export interface GeneratePoolRequest {

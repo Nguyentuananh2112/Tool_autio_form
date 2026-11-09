@@ -51,3 +51,8 @@
 ### [RISK-008] Thay đổi schema giữa các phiên bản phát hành — OPEN
 - 40–50 máy đã có file DB cũ; bản cập nhật đổi cột/bảng mà chỉ dùng `create_all` sẽ không thêm cột mới → lỗi khi chạy.
 - **Giảm thiểu:** thêm Alembic (hỗ trợ batch mode cho SQLite) trước bản phát hành đầu tiên; app tự chạy migration khi khởi động; sao lưu file DB trước khi migrate.
+
+### [RISK-013] Gemini thường xuyên quá tải (503) — 2026-11-09 — MITIGATED
+- **Quan sát:** 2026-11-03 và 2026-11-09 đều gặp `gemini-flash-latest` trả 503 sau 10–100 giây, có lúc cả `gemini-flash-lite-latest` cũng 503; vài chục giây sau lại bình thường (Lite trả lời ~4–8 giây).
+- **Giảm thiểu:** `services/gemini_call.py` — chờ tối đa 45 giây mỗi model, 503 chuyển ngay model dự phòng (flash-latest → flash-lite-latest → gemini-3.1-flash-lite), mọi model quá tải thì chờ 10 giây đi lại cả chuỗi một lần; phân loại câu tự luận lỗi không chặn soát; màn Soát logic có nút Thử lại.
+- **Còn lại:** nếu Google quá tải kéo dài, người dùng phải bấm Thử lại sau ít phút (thông báo đã nói rõ).

@@ -13,12 +13,21 @@ import pandas as pd
 
 from app.schemas.campaign_schema import QuestionRuleConfig, SpssGroupConfig
 from app.schemas.form_schema import ParsedFormStructure
-from app.schemas.logic_api import GroupCorrelation, LogicReviewResult, RatioDrift, SampleRespondent, ViolationCount
+from app.schemas.logic_api import (
+    GroupCorrelation,
+    LogicReviewResult,
+    RatioDrift,
+    SampleRespondent,
+    SpssAlphaCheck,
+    ViolationCount,
+)
 from app.schemas.logic_schema import LogicMap
 from app.services.logic.checker import ResponseChecker
 from app.services.logic.ordering import positions
 from app.services.spss.answers import GeneratedResponse
 from app.services.spss.generator import SurveyDataGenerator
+from app.services.spss.scales import scale_values_for
+from app.services.spss.statistics import alpha_from_r, cronbach_alpha
 
 REVIEW_SEED = 20_261_103
 DRIFT_REPORT_PCT = 5.0
@@ -96,6 +105,44 @@ def _sample(responses: Sequence[GeneratedResponse], structure: ParsedFormStructu
     return SampleRespondent(attitude=attitude, answers={e: list(a.values) for e, a in responses[index].answers.items()})
 
 
+def _group_alpha(responses: Sequence[GeneratedResponse], structure: ParsedFormStructure, group: SpssGroupConfig) -> float | None:
+    questions = {q.entry_id: q for q in structure.questions}
+    if any(e not in questions for e in group.entries):
+        return None
+    scale = scale_values_for(questions[group.entries[0]])
+    flip = scale[0] + scale[-1]
+    rows = []
+    for response in responses:
+        values = [response.answers.get(e) for e in group.entries]
+        if all(a is not None and a.numeric_value is not None for a in values):
+            rows.append([flip - a.numeric_value if e in group.reversed_entries else a.numeric_value
+                         for e, a in zip(group.entries, values)])
+    if len(rows) < MIN_PAIR_ANSWERS:
+        return None
+    alpha = cronbach_alpha(np.array(rows, dtype=float))
+    return round(float(alpha), 3) if np.isfinite(alpha) else None
+
+
+def _spss_alpha(
+    structure: ParsedFormStructure, groups: Sequence[SpssGroupConfig],
+    plain: Sequence[GeneratedResponse], checked: Sequence[GeneratedResponse],
+) -> list[SpssAlphaCheck]:
+    return [
+        SpssAlphaCheck(
+            group_id=group.group_id, name=group.name,
+            target=group.alpha_target if group.alpha_target is not None
+            else round(float(alpha_from_r(group.r or 0.0, len(group.entries))), 3),
+            before=_group_alpha(plain, structure, group), after=_group_alpha(checked, structure, group),
+        )
+        for group in groups
+    ]
+
+
+def _unlabeled(logic: LogicMap, rules: Sequence[QuestionRuleConfig]) -> int:
+    pools = {rule.entry_id: rule.text_pool for rule in rules}
+    return sum(1 for text in logic.text_attitudes for t in pools.get(text.entry_id, []) if t not in text.labels)
+
+
 def review_logic(
     structure: ParsedFormStructure,
     rules: Sequence[QuestionRuleConfig],
@@ -144,6 +191,8 @@ def review_logic(
         correlations=correlations,
         drifts=_drifts(structure, logic, plain, checked),
         sample=_sample(checked, structure, logic),
+        spss_alpha=_spss_alpha(structure, spss_groups, plain, checked),
+        unlabeled_texts=_unlabeled(logic, rules),
         logic=logic,
         ready=inconsistent_after == 0,
     )

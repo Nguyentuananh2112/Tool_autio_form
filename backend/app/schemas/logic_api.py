@@ -36,6 +36,16 @@ class RatioDrift(BaseModel):
     max_drift_pct: float  # điểm % lệch lớn nhất của một đáp án so với khi không soát
 
 
+class SpssAlphaCheck(BaseModel):
+    """Soát logic kéo câu lệch vào gần nhau → Alpha nhóm SPSS tăng nhẹ; báo để người dùng chỉnh r nếu cần."""
+
+    group_id: str
+    name: str
+    target: float | None  # alpha mục tiêu (hoặc suy từ r)
+    before: float | None  # sinh theo cách cũ
+    after: float | None  # sau soát logic
+
+
 class SampleRespondent(BaseModel):
     attitude: str  # "khá tích cực", ...
     answers: dict[str, list[str]]
@@ -51,5 +61,8 @@ class LogicReviewResult(BaseModel):
     correlations: list[GroupCorrelation]
     drifts: list[RatioDrift]
     sample: SampleRespondent | None
+    spss_alpha: list[SpssAlphaCheck] = Field(default_factory=list)
+    # Câu tự luận theo thái độ còn câu mẫu chưa phân loại được (Gemini bận) → coi là trung lập
+    unlabeled_texts: int = 0
     logic: LogicMap
     ready: bool
