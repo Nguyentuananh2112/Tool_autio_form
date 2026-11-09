@@ -135,3 +135,11 @@
   - `humanize/styles.py` + `humanizer.py`: mỗi người điền một kiểu gõ (cẩn thận 25%, thường 40%, lười 20%, không dấu 10%, teencode nhẹ 5%) áp cho MỌI câu tự luận + ô "Mục khác" của họ: chữ hoa / dấu chấm cuối / dấu phẩy theo xác suất, viết tắt (ko, dc, j, r, vs, mn, sp…), gõ không dấu, lỗi gõ ~1–2% số từ, kiểu lười chỉ gõ vế đầu.
   - Chỉ áp cho dữ liệu tự sinh khi chạy / gửi thử (Excel là dữ liệu thật → giữ nguyên); theo seed chiến dịch nên "Gửi lại phản hồi lỗi" vẫn ra đúng câu cũ.
 - **Kết quả thử thật (Gemini, câu C16 form Tiki):** câu ngắn đời thường, có kể chuyện cụ thể, có chê thẳng; trước khi sửa câu lệnh, AI chép nguyên văn ví dụ → đã cấm.
+
+### [SPEC-023] Chuẩn bị lần đầu: tự cài thành phần còn thiếu khi mở app — 2026-11-09 — ĐÃ LÀM
+- **Yêu cầu người dùng:** người dùng chỉ biết cài và dùng; lần đầu chạy app tự quét thành phần cần thiết, thiếu thì tự cài; lần sau mở là chạy ngay.
+- **Quét bộ cài v0.1.0:** Python + mọi thư viện backend, giao diện, driver Playwright (Node) đều đã đóng gói trong bộ cài (PyInstaller + electron-builder) → máy người dùng không cần cài gì. Thành phần duy nhất tải riêng: Chrome Headless Shell cho trình duyệt dự phòng (~100 MB, RISK-012) — trước đây phải tự bấm tải trong Cài đặt.
+- **Cài đặt:** `BrowserSetupBanner` gắn trong `AppShell`; `useBrowserInstall({ autoInstall: true })` hỏi `GET /system/browser` khi mở app, chưa có → tự `POST /system/browser/install` (mỗi phiên tự thử 1 lần, `shouldAutoInstall`). Đang tải: dải tiến độ, app dùng bình thường. Lỗi: nút Thử lại; backend khởi động lại ở lần mở sau nên tự thử lại. Đã có: không hiện gì.
+- **Vị trí cài:** `%LOCALAPPDATA%\ms-playwright` (mặc định Playwright) → giữ nguyên qua các lần cập nhật app, không tải lại.
+- **Kiểm chứng:** giả lập máy mới (`PLAYWRIGHT_BROWSERS_PATH` rỗng): lần đầu installed=false → tự tải xong ~20 giây → installed=true; mở lại: installed=true, không tải. Test giao diện: tự tải lần đầu / không làm gì khi đã có / lỗi hiện Thử lại và không tải lặp.
+- **Vì sao không nhúng Chromium vào bộ cài:** bộ cài đã 186 MB; nhúng thêm ~100 MB làm mỗi bản cập nhật nặng hơn cho 40–50 người dùng, trong khi tải một lần là đủ.

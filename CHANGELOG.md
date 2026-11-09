@@ -3,6 +3,10 @@
 Mỗi bản phát hành cần một mục `## [X.Y.Z]` ở đây — nội dung mục này hiện trong hộp thoại "Có phiên bản mới" của app.
 Viết bằng lời thường cho người dùng, mỗi dòng một thay đổi.
 
+## [Chưa phát hành]
+
+- Mở app lần đầu: app tự kiểm tra và tự tải trình duyệt dự phòng (một lần, chạy nền, có thanh tiến độ); bạn không cần vào Cài đặt. Lần mở sau dùng ngay. Mất mạng lúc tải thì có nút Thử lại và lần mở sau app tự thử lại.
+
 ## [0.1.0] - 2026-11-03
 
 - Bản đầu tiên: phân tích Google Form công khai (nhiều trang, rẽ nhánh, câu lưới, Mục khác).
