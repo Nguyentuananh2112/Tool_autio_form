@@ -69,7 +69,15 @@ jobs:
           npx vitest run
           npx vite build
 
-      - name: Build bộ cài & đăng GitHub Release
+      # Tạo sẵn Release nháp: electron-builder tải các file song song, nếu chưa có Release
+      # nó tạo trùng 2 bản cùng tag (BUG-021). Có sẵn bản nháp thì mọi file vào cùng một chỗ.
+      - name: Tạo sẵn Release nháp
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" --draft --title "${GITHUB_REF_NAME#v}" --notes-file desktop/release-notes.md
+
+      - name: Build bộ cài & tải lên Release nháp
         working-directory: desktop
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -77,3 +85,11 @@ jobs:
           npm ci
           npm run build
           npx electron-builder --win --publish always --config.releaseInfo.releaseNotesFile=release-notes.md
+
+      - name: Công khai Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name'
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest

@@ -109,4 +109,5 @@
 - **Phát hiện bởi:** CI Release (lần đẩy tag v0.1.0 đầu tiên); chưa có Release nào được tạo.
 - **Nguyên nhân gốc:** release.yml dùng `-c.releaseInfo.releaseNotesFile=...`; trên runner, electron-builder 26 hiểu `-c` là đường dẫn file cấu hình nên đi mở file tên `.releaseInfo...`.
 - **Cách xử lý:** đổi sang dạng đầy đủ `--config.releaseInfo.releaseNotesFile=release-notes.md`; chạy thử lệnh build ở máy (publish never) đạt.
-- **Bài học:** Ghi đè cấu hình electron-builder qua CLI luôn dùng `--config.<khoá>`, không dùng `-c.<khoá>`.
+- **Lỗi kèm theo:** lần chạy lại thành công nhưng electron-builder tải file song song khi chưa có Release → tạo 2 Release v0.1.0: bản "Latest" chỉ có .blockmap (người dùng/updater không thấy bộ cài). Đã chép .blockmap sang bản đủ file và xoá bản trùng (người dùng đồng ý). Workflow nay tạo sẵn Release nháp bằng `gh release create --draft`, electron-builder tải vào đó, rồi `gh release edit --draft=false --latest`.
+- **Bài học:** Ghi đè cấu hình electron-builder qua CLI luôn dùng `--config.<khoá>`, không dùng `-c.<khoá>`. Luôn tạo Release trước khi electron-builder publish.
