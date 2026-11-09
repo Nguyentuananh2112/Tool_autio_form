@@ -10,7 +10,7 @@ import { useGeminiPool, POOL_SIZE } from '@/hooks/useGeminiPool';
 import { useQuestionRule } from '@/hooks/useQuestionRule';
 import type { ParsedQuestion } from '@/types/form';
 
-import { LinesEditor } from '../weights/LinesEditor';
+import { AnswerPoolEditor } from '../weights/AnswerPoolEditor';
 import { QuestionCardFrame } from './QuestionCardFrame';
 
 const PERSONAS = ['Sinh viên đại học tại Việt Nam, 18–25 tuổi', 'Nhân viên văn phòng', 'Người làm tự do', 'Người lớn tuổi, viết ngắn gọn'];
@@ -46,7 +46,7 @@ export function TextQuestionCard({ formId, formTitle, question, tourId }: {
       <div className="flex flex-wrap gap-3">
         <div className="min-w-[260px] flex-[2]">
           <Field label="Ngữ cảnh cho AI" htmlFor={contextId}>
-            <TextArea id={contextId} rows={2} value={context} onChange={(e) => setContext(e.target.value)} />
+            <TextArea id={contextId} rows={2} spellCheck={false} value={context} onChange={(e) => setContext(e.target.value)} />
           </Field>
         </div>
         <div className="min-w-[200px] flex-1">
@@ -65,7 +65,8 @@ export function TextQuestionCard({ formId, formTitle, question, tourId }: {
           {error.status === 400 && <Link to="/settings">Mở Cài đặt để nhập Gemini API key</Link>}
         </Alert>
       )}
-      <LinesEditor label="Câu trả lời mẫu (hoặc tự dán danh sách)" value={pool} rows={pool.length > 0 ? 6 : 3} placeholder="Mỗi dòng một câu trả lời" onChange={(lines) => update({ text_pool: lines })} />
+      <AnswerPoolEditor label="Câu trả lời mẫu" value={pool} onChange={(lines) => update({ text_pool: lines })}
+        emptyHint="Chưa có câu nào — bấm “Sinh bằng Gemini”, tự thêm từng câu, hoặc “Dán / sửa hàng loạt”." />
     </QuestionCardFrame>
   );
 }

@@ -20,7 +20,7 @@ export function LinesEditor({ label, value, onChange, placeholder, rows = 4 }: {
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-[13px] font-medium text-muted">{label} · {value.length} câu</label>
-      <TextArea id={id} rows={rows} value={text} placeholder={placeholder} onChange={(e) => setText(e.target.value)} onBlur={commit} />
+      <TextArea id={id} rows={rows} spellCheck={false} value={text} placeholder={placeholder} onChange={(e) => setText(e.target.value)} onBlur={commit} />
       <span className="text-xs text-muted">Mỗi dòng một câu. Thay đổi được lưu khi bạn bấm ra ngoài ô.</span>
     </div>
   );
