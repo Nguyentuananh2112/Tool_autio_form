@@ -92,3 +92,9 @@
 - **Phát hiện bởi:** điều tra BUG-017 (thử bấm Tiếp trên bản sao form Tiki, KHÔNG bấm Gửi).
 - **Nguyên nhân gốc:** URL đổi sang `/formResponse` ngay khi bấm Tiếp; code cũ coi URL đó là đã gửi xong.
 - **Cách xử lý:** chỉ coi là đã gửi khi trang không còn ô ẩn `fbzx` (giống BUG-007); sang trang được xác nhận bằng `pageHistory` thay đổi.
+
+### [BUG-019] Chiến dịch 50/50 lỗi vẫn hiện "Hoàn thành" với thanh tiến độ xanh 100% — 2026-11-09 — FIXED
+- **Phát hiện bởi:** người dùng (ảnh màn Tổng quan sau BUG-017).
+- **Nguyên nhân gốc:** runner đặt COMPLETED khi gửi hết hàng đợi, không xét số thành công; bảng chiến dịch tính tiến độ = thành công + lỗi và tô một màu theo trạng thái.
+- **Cách xử lý:** gửi hết mà 0 thành công → trạng thái FAILED kèm lý do; huy hiệu "Không gửi được" (đỏ) / "Hoàn thành · có lỗi" (cam) dựa trên số thành công/lỗi (đúng cả với chiến dịch cũ đã lưu); thanh tiến độ tách xanh/đỏ, ghi "X thành công · Y lỗi / tổng".
+- **Bài học:** "Xong" khác "thành công" — mọi chỉ báo tiến độ phải tách số thành công khỏi số lỗi.

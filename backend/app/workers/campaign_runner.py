@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 NETWORK_RETRIES = 2
 AUTO_PAUSE_REASON = "Google đang giới hạn số lần gửi. Chiến dịch đã tự tạm dừng; hãy chờ một lúc rồi bấm Tiếp tục."
+NOTHING_SENT_REASON = "Không gửi được phản hồi nào: Google từ chối cả {count} lần. Xem lý do trong Nhật ký gửi."
 # Form từ chối liên tiếp → gần như chắc chắn lỗi cấu hình / form đổi, không phải ngẫu nhiên: dừng sớm thay vì đốt hết lượt
 MAX_CONSECUTIVE_FAILURES = 5
 FAILURE_PAUSE_REASON = (
@@ -155,6 +156,10 @@ class CampaignRunner:
         if self.control.is_cancelled:
             await self._set_status(CampaignStatus.PAUSED, reason=USER_STOP_REASON)
             return CampaignStatus.PAUSED
+        if self.completed == 0 and self.failed > 0:
+            # Gửi hết lượt mà không phản hồi nào được nhận → KHÔNG phải "Hoàn thành" (BUG-019)
+            await self._set_status(CampaignStatus.FAILED, reason=NOTHING_SENT_REASON.format(count=self.failed))
+            return CampaignStatus.FAILED
         await self._set_status(CampaignStatus.COMPLETED)
         return CampaignStatus.COMPLETED
 

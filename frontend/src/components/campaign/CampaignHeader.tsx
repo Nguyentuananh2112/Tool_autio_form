@@ -21,7 +21,7 @@ export function CampaignHeader({ campaign, controls }: { campaign: CampaignRead;
         <Link to="/campaigns" className="text-[13px] text-accent no-underline">← Tất cả chiến dịch</Link>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="m-0 text-[26px] font-bold tracking-tight">{campaign.name}</h1>
-          <StatusBadge status={campaign.status} />
+          <StatusBadge status={campaign.status} completed={campaign.completed_count} failed={campaign.failed_count} />
         </div>
         <span className="text-sm text-muted">{scheduleText(campaign)} · {campaign.form_title}</span>
       </div>

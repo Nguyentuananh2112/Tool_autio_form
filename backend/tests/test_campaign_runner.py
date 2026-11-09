@@ -166,3 +166,15 @@ async def test_that_bai_xen_ke_thanh_cong_khong_tam_dung(campaign_id: uuid.UUID)
     status = await _runner(campaign_id, ScriptedHttp(script), RejectingBrowser(), EventBus(), CampaignControl(str(campaign_id))).run()
     assert status == CampaignStatus.COMPLETED
     assert await _counts(campaign_id) == ("COMPLETED", 3, 3, 6)
+
+
+async def test_khong_phan_hoi_nao_thanh_cong_thi_bao_loi_khong_bao_hoan_thanh(campaign_id: uuid.UUID) -> None:
+    """BUG-019: trước đây 50/50 lỗi vẫn hiện "Hoàn thành"."""
+    async with AsyncSessionLocal() as session:
+        campaign = await session.get(Campaign, campaign_id)
+        campaign.total_target = 3  # < 5 nên không bị tự tạm dừng trước
+        await session.commit()
+    control = CampaignControl(str(campaign_id))
+    status = await _runner(campaign_id, ScriptedHttp([OutcomeKind.VALIDATION] * 3), RejectingBrowser(), EventBus(), control).run()
+    assert status == CampaignStatus.FAILED
+    assert await _counts(campaign_id) == ("FAILED", 0, 3, 3)
