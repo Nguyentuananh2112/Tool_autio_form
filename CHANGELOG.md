@@ -3,7 +3,7 @@
 Mỗi bản phát hành cần một mục `## [X.Y.Z]` ở đây — nội dung mục này hiện trong hộp thoại "Có phiên bản mới" của app.
 Viết bằng lời thường cho người dùng, mỗi dòng một thay đổi.
 
-## [Chưa phát hành]
+## [0.1.1] - 2026-11-09
 
 - Mở app lần đầu: app tự kiểm tra và tự tải trình duyệt dự phòng (một lần, chạy nền, có thanh tiến độ); bạn không cần vào Cài đặt. Lần mở sau dùng ngay. Mất mạng lúc tải thì có nút Thử lại và lần mở sau app tự thử lại.
 
