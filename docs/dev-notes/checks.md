@@ -44,3 +44,8 @@
 - `GET /settings` trả `gemini_shared_key: true`, không có token → 401. File key trong mã nguồn đã mã hoá (grep key thô = 0).
 - Lượt 1 gọi từ exe: Flash quá 45 giây → Lite 503 (Google quá tải lúc đó) → thêm vòng thử lại thứ hai (RISK-013).
 - Dọn dẹp: đã xoá `app/core/_build_secrets.py`, `dist/`, `build/` (chứa key) sau khi thử.
+
+## 2026-11-09 — Chạy thật 25 phản hồi theo luồng Soát logic (bản sao form Tiki, người dùng đồng ý)
+- Bản đồ do gemini-3.8-flash đọc: 1 nhóm 25 câu, 7 ràng buộc, 2 ô loại trừ. Soát mẫu thử 200: mâu thuẫn 168 → 0 (sửa 207, sinh lại 9), độ khớp nhóm 0,05 → 0,45; Alpha C10 0,838 → 0,878 (mục tiêu 0,85), C15 0,792 → 0,775 (mục tiêu 0,80). Phân loại câu tự luận đủ (0 câu chưa nhãn).
+- Gửi: 25/25 thành công, 0 lỗi, HTTPX, ~7 phút (lịch 6 phút, 1 luồng).
+- Soát lại đúng payload đã gửi bằng ResponseChecker: 0 phản hồi mâu thuẫn; người tiêu cực (không nhận diện, C10 1–3, giới thiệu 1/10) và tích cực (nhận diện rõ, C10 4–5) đều nhất quán; mọi "Dưới 18" là học sinh – sinh viên.
