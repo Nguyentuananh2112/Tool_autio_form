@@ -9,7 +9,7 @@ const campaign = (patch: Partial<CampaignRead>): CampaignRead => ({
   id: 'c', form_id: 'f', form_title: 'Interview Questions', name: 'Interview Questions — 19:41', data_source: 'PROBABILITY',
   status: 'COMPLETED', total_target: 50, completed_count: 0, failed_count: 0,
   schedule: { mode: 'BURST', duration_minutes: null, concurrency: 5 }, proxy: null, use_playwright_fallback: true,
-  created_at: '2026-11-09T12:41:58Z', is_active: false, pause_reason: null, ...patch,
+  created_at: '2026-11-09T12:41:58Z', is_active: false, pause_reason: null, status_reason: null, auto_paused: false, ...patch,
 });
 
 function renderTable(rows: CampaignRead[]) {

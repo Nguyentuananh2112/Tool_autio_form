@@ -119,3 +119,9 @@
 - **Lệch so với thiết kế:** lượt 3 SỬA TẠI CHỖ câu mâu thuẫn thay vì bỏ cả phản hồi (bỏ cả phản hồi làm lệch tỷ lệ — checks.md). Dữ liệu Excel là dữ liệu thật nên không bắt buộc soát.
 - **Key:** `GEMINI_SHARED_KEY` đã lưu vào GitHub Secrets (2026-11-03); `GEMINI_BACKUP_KEY` chưa có (tuỳ chọn).
 - **AI:** mặc định `gemini-flash-latest`; quá tải (503) hoặc quá 45 giây → chuyển ngay `gemini-flash-lite-latest` (đo thật: Flash quá tải trả 503 sau 10–100 giây, Lite trả lời ~8 giây với chất lượng đủ dùng).
+
+### [SPEC-021] Thông báo kết thúc chiến dịch + Gửi lại phản hồi lỗi — 2026-11-09 — ĐÃ LÀM (màn 13 đã duyệt)
+- **Yêu cầu người dùng:** gửi xong thì báo hoàn tất; gửi không thành công thì báo và nói rõ lý do; có nút gửi lại đúng các phản hồi lỗi, giữ nguyên nội dung.
+- **Cài đặt:** `services/campaign_summary.py` (gom lỗi theo loại REJECTED / RATE_LIMITED / NETWORK / BROWSER / FORM_CLOSED / OTHER + cách xử lý), `GET /campaigns/{id}/summary`, `POST /campaigns/{id}/retry-failed`; cột `campaigns.status_reason` lưu lý do trạng thái (tự thêm cho CSDL cũ); `CampaignRead.auto_paused`.
+- **Gửi lại giữ nguyên nội dung:** xoá nhật ký lỗi → các số thứ tự đó quay lại hàng đợi; bộ sinh dùng seed cố định theo chiến dịch + bản đồ logic đã chụp nên sinh ra ĐÚNG phản hồi cũ (Excel: đúng dòng cũ). Nếu form đã được Phân tích lại và đổi câu hỏi thì nội dung theo cấu trúc mới.
+- **Giao diện:** `CompletionNotifier` gắn ở gốc app, theo dõi danh sách chiến dịch (3 giây khi có chiến dịch chạy, 8 giây khi rảnh) → hộp thoại ở mọi màn hình + thông báo Windows khi app không ở trước mặt (Electron `setAppUserModelId`, IPC `window:focus`). Không báo khi người dùng tự Tạm dừng / Dừng. Trang chiến dịch có khung kết quả để xem lại.

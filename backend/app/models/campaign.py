@@ -5,7 +5,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Uuid, func, text, true
+from sqlalchemy import JSON, Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String, Text, Uuid, func, text, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -66,6 +66,8 @@ class Campaign(Base):
     excel_data: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
     # Ảnh chụp bản đồ logic đã xác nhận lúc tạo chiến dịch → chạy tiếp sau tạm dừng sinh lại đúng dữ liệu cũ
     logic_map: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    # Lý do của trạng thái hiện tại (VD tự tạm dừng vì Google từ chối) — giữ được sau khi tắt mở app
+    status_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     proxy_list: Mapped[list[str]] = mapped_column(
         JSON, nullable=False, default=list, server_default=text("'[]'")
     )

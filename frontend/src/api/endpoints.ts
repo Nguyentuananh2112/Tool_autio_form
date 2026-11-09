@@ -1,6 +1,7 @@
 import type {
   CampaignCreate,
   CampaignRead,
+  CampaignSummary,
   QuestionDistribution,
   QuestionRuleConfig,
   SpssGroupConfig,
@@ -87,6 +88,8 @@ export const campaignsApi = {
   stop: (id: string) => request(() => api.post<CampaignRead>(`/campaigns/${id}/stop`)),
   logs: (id: string, limit = 100) => request(() => api.get<SubmissionLogRead[]>(`/campaigns/${id}/logs`, { params: { limit } })),
   distribution: (id: string) => request(() => api.get<QuestionDistribution[]>(`/campaigns/${id}/distribution`)),
+  summary: (id: string) => request(() => api.get<CampaignSummary>(`/campaigns/${id}/summary`)),
+  retryFailed: (id: string) => request(() => api.post<{ retried: number; campaign: CampaignRead }>(`/campaigns/${id}/retry-failed`)),
   exportUrl: (id: string, format: 'xlsx' | 'csv') => `/campaigns/${id}/export?format=${format}`,
   exportFile: (id: string, format: 'xlsx' | 'csv') =>
     request(() => api.get<Blob>(`/campaigns/${id}/export`, { params: { format }, responseType: 'blob' })),

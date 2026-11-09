@@ -5,11 +5,11 @@ from __future__ import annotations
 import asyncio
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Campaign, CampaignStatus, DataSource, Form, QuestionRule
+from app.models import Campaign, CampaignStatus, DataSource, Form, QuestionRule, SubmissionLog
 from app.schemas.campaign_api import CampaignCreate, CampaignRead
 from app.schemas.campaign_schema import ScheduleConfig
 from app.schemas.form_schema import ParsedFormStructure
@@ -70,7 +70,18 @@ def to_read(campaign: Campaign) -> CampaignRead:
         created_at=campaign.created_at,
         is_active=bool(control and control.is_active),
         pause_reason=control.pause_reason if control else None,
+        status_reason=campaign.status_reason,
+        auto_paused=is_auto_paused(campaign.status, (control.pause_reason if control and control.is_paused else None) or campaign.status_reason),
     )
+
+
+def is_auto_paused(status: str, reason: str | None) -> bool:
+    """App TỰ tạm dừng (Google giới hạn / từ chối liên tiếp) — khác người dùng bấm Tạm dừng / Dừng / tắt app."""
+    from app.workers.campaign_runner import USER_PAUSE_REASON, USER_STOP_REASON
+
+    return status == CampaignStatus.PAUSED.value and bool(reason) and reason not in {
+        USER_PAUSE_REASON, USER_STOP_REASON, INTERRUPTED_REASON,
+    }
 
 
 async def _resolve_target(payload: CampaignCreate, structure: ParsedFormStructure) -> int:
@@ -148,7 +159,31 @@ async def set_status(session: AsyncSession, campaign_id: uuid.UUID, status: Camp
 async def recover_interrupted(session: AsyncSession) -> int:
     """Khi khởi động: chiến dịch còn RUNNING nghĩa là app đã tắt giữa chừng → chuyển sang PAUSED."""
     result = await session.execute(
-        update(Campaign).where(Campaign.status == CampaignStatus.RUNNING.value).values(status=CampaignStatus.PAUSED.value)
+        update(Campaign).where(Campaign.status == CampaignStatus.RUNNING.value)
+        .values(status=CampaignStatus.PAUSED.value, status_reason=INTERRUPTED_REASON)
     )
     await session.commit()
     return result.rowcount or 0
+
+
+async def reset_failed(session: AsyncSession, campaign_id: uuid.UUID) -> int:
+    """Chuẩn bị "Gửi lại phản hồi lỗi": xoá nhật ký lỗi để các phản hồi đó quay lại hàng đợi.
+
+    Bộ sinh dùng seed cố định theo chiến dịch (+ bản đồ logic đã chụp) nên phản hồi gửi lại GIỐNG HỆT
+    phản hồi đã lỗi; dữ liệu Excel cũng đọc lại đúng các dòng cũ.
+    """
+    campaign = await get_campaign(session, campaign_id)
+    control = registry.get(str(campaign_id))
+    if control and control.is_active:
+        raise InvalidCampaignError("Chiến dịch đang chạy. Hãy chờ chạy xong hoặc dừng hẳn rồi gửi lại.")
+    deleted = await session.execute(
+        delete(SubmissionLog).where(SubmissionLog.campaign_id == campaign_id, SubmissionLog.is_success.is_(False))
+    )
+    count = deleted.rowcount or 0
+    if count == 0:
+        raise InvalidCampaignError("Không có phản hồi lỗi nào để gửi lại.")
+    campaign.failed_count = 0
+    campaign.status = CampaignStatus.IDLE.value
+    campaign.status_reason = None
+    await session.commit()
+    return count

@@ -55,6 +55,9 @@ class CampaignRead(BaseModel):
     created_at: UtcDateTime
     is_active: bool = False
     pause_reason: str | None = None
+    status_reason: str | None = None
+    # Tự tạm dừng (Google giới hạn / từ chối liên tiếp) → giao diện hiện thông báo kết thúc (màn 13)
+    auto_paused: bool = False
 
 
 class SpssPreviewRequest(BaseModel):
@@ -104,3 +107,36 @@ class SubmissionLogRead(BaseModel):
 class ExcelConvertResponse(BaseModel):
     report: ConversionReport
     records: list[dict[str, Any]]
+
+
+class FailureReason(BaseModel):
+    category: str  # REJECTED / RATE_LIMITED / NETWORK / BROWSER / FORM_CLOSED / OTHER
+    title: str
+    fix: str  # cách xử lý, lời thường
+    count: int
+    detail: str | None  # thông báo gốc (VD "Câu hỏi bắt buộc")
+
+
+class CampaignSummary(BaseModel):
+    """Thông báo kết thúc chiến dịch (màn 13)."""
+
+    campaign_id: uuid.UUID
+    name: str
+    form_id: uuid.UUID
+    form_title: str
+    status: str
+    status_reason: str | None
+    auto_paused: bool
+    total_target: int
+    completed_count: int
+    failed_count: int
+    remaining: int
+    started_at: UtcDateTime | None
+    finished_at: UtcDateTime | None
+    duration_seconds: float
+    reasons: list[FailureReason]
+
+
+class RetryFailedResponse(BaseModel):
+    retried: int
+    campaign: CampaignRead

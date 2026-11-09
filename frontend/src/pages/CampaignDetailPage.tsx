@@ -1,7 +1,9 @@
-import { useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 
 import { formsApi } from '@/api/endpoints';
 import { CampaignHeader } from '@/components/campaign/CampaignHeader';
+import { CampaignResultPanel } from '@/components/campaign/CampaignResultPanel';
 import { DistributionChart } from '@/components/campaign/DistributionChart';
 import { LiveLog } from '@/components/campaign/LiveLog';
 import { LiveProgress } from '@/components/campaign/LiveProgress';
@@ -20,6 +22,13 @@ export function CampaignDetailPage() {
   const controls = useCampaignControls(campaignId, (updated) => live.campaign.setData(updated));
   const campaign = live.campaign.data;
   const form = useAsyncData(() => (campaign ? formsApi.get(campaign.form_id) : Promise.resolve(null)), [campaign?.form_id]);
+  const { hash } = useLocation();
+  const loaded = Boolean(campaign);
+
+  // Nút "Xem nhật ký" ở thông báo kết thúc mở thẳng phần Nhật ký gửi
+  useEffect(() => {
+    if (loaded && hash === '#nhat-ky') document.getElementById('nhat-ky')?.scrollIntoView({ behavior: 'smooth' });
+  }, [hash, loaded]);
 
   if (live.campaign.loading && !campaign) return <Spinner label="Đang mở chiến dịch…" />;
   if (!campaign) return <ErrorAlert error={live.campaign.error ?? { message: 'Không tìm thấy chiến dịch.' }} />;
@@ -28,6 +37,7 @@ export function CampaignDetailPage() {
     <>
       <CampaignHeader campaign={campaign} controls={controls} />
       <ErrorAlert error={controls.error} />
+      <CampaignResultPanel campaign={campaign} />
       <LiveProgress campaign={campaign} lines={live.lines} nextDelay={live.nextDelay} />
       <div className="flex flex-wrap gap-4">
         <Card className="min-w-0 flex-[3] basis-[440px]" aria-labelledby="dist-title">
@@ -45,7 +55,7 @@ export function CampaignDetailPage() {
           </div>
         </Card>
       </div>
-      <LiveLog lines={live.lines} socket={live.socket} />
+      <div id="nhat-ky" className="scroll-mt-4"><LiveLog lines={live.lines} socket={live.socket} /></div>
     </>
   );
 }

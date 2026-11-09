@@ -71,6 +71,38 @@ export interface CampaignRead {
   created_at: string;
   is_active: boolean;
   pause_reason: string | null;
+  status_reason: string | null;
+  /** App tự tạm dừng (Google giới hạn / từ chối liên tiếp) — khác người dùng bấm Tạm dừng */
+  auto_paused: boolean;
+}
+
+export type FailureCategory = 'REJECTED' | 'RATE_LIMITED' | 'NETWORK' | 'BROWSER' | 'FORM_CLOSED' | 'OTHER';
+
+export interface FailureReason {
+  category: FailureCategory;
+  title: string;
+  fix: string;
+  count: number;
+  detail: string | null;
+}
+
+/** Thông báo kết thúc chiến dịch (màn 13) — khớp backend CampaignSummary. */
+export interface CampaignSummary {
+  campaign_id: string;
+  name: string;
+  form_id: string;
+  form_title: string;
+  status: CampaignStatus;
+  status_reason: string | null;
+  auto_paused: boolean;
+  total_target: number;
+  completed_count: number;
+  failed_count: number;
+  remaining: number;
+  started_at: string | null;
+  finished_at: string | null;
+  duration_seconds: number;
+  reasons: FailureReason[];
 }
 
 export interface SpssItemPreview {

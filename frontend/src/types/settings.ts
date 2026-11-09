@@ -42,6 +42,7 @@ export interface UpdateInfo {
 export interface DesktopBridge {
   version: string;
   openPath?: (path: string) => Promise<void>;
+  focusWindow?: () => Promise<void>;
   updater?: {
     check: () => Promise<UpdateInfo | null>;
     download: (onProgress: (percent: number) => void) => Promise<void>;

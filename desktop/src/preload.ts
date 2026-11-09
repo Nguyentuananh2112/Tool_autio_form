@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('__AUTOFORM_CONFIG__', {
 contextBridge.exposeInMainWorld('autoformDesktop', {
   version: config.version,
   openPath: (target: string) => ipcRenderer.invoke('shell:open-path', target),
+  focusWindow: () => ipcRenderer.invoke('window:focus'),
   updater: {
     check: () => ipcRenderer.invoke('updater:check'),
     download: async (onProgress: (percent: number) => void) => {

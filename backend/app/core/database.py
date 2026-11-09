@@ -100,6 +100,7 @@ async def session_scope() -> AsyncIterator[AsyncSession]:
 ADDED_COLUMNS: tuple[tuple[str, str, str], ...] = (
     ("forms", "logic_map", "JSON"),
     ("campaigns", "logic_map", "JSON"),
+    ("campaigns", "status_reason", "TEXT"),
 )
 
 

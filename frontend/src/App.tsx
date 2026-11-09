@@ -1,5 +1,6 @@
 import { HashRouter, Route, Routes } from 'react-router-dom';
 
+import { CompletionNotifier } from '@/components/campaign/CompletionNotifier';
 import { AppShell } from '@/components/layout/AppShell';
 import { TourProvider } from '@/components/tour/TourProvider';
 import { UpdaterProvider } from '@/components/update/UpdaterProvider';
@@ -40,6 +41,7 @@ export function App() {
           <AppShell>
             <AppRoutes />
           </AppShell>
+          <CompletionNotifier />
         </TourProvider>
       </UpdaterProvider>
     </HashRouter>

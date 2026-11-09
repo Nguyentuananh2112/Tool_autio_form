@@ -16,6 +16,9 @@ const backend = new BackendProcess();
 let mainWindow: BrowserWindow | null = null;
 let quitting = false;
 
+// Windows chỉ hiện thông báo hệ thống (màn 13) khi app có AppUserModelID — trùng appId của electron-builder
+app.setAppUserModelId('com.autoform.desktop');
+
 if (!app.requestSingleInstanceLock()) {
   app.quit(); // đã mở một cửa sổ khác → đưa cửa sổ đó lên thay vì chạy 2 backend
 } else {
@@ -35,6 +38,13 @@ async function start(): Promise<void> {
     event.returnValue = { apiBase: info.apiBase, wsBase: info.wsBase, token: info.token, version: app.getVersion() };
   });
   ipcMain.handle('shell:open-path', (_event, target: string) => shell.openPath(target));
+  // Bấm vào thông báo "Đã gửi xong" → đưa cửa sổ app lên trước (kể cả đang thu nhỏ)
+  ipcMain.handle('window:focus', () => {
+    if (!mainWindow) return;
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  });
   setupUpdater(() => mainWindow, backend);
   mainWindow = createMainWindow();
   mainWindow.on('closed', () => (mainWindow = null));

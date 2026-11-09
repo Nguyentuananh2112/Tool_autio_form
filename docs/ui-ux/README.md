@@ -19,6 +19,7 @@
 | 10 | `Help.dc.html` | Hướng dẫn: tìm kiếm, 8 thẻ tính năng (Dùng khi / Cách làm), thuật ngữ, câu hỏi thường gặp | `pages/HelpPage.tsx`, `components/help/*` |
 | 11 | `LogicReview.dc.html` | Soát logic (bước 3 mới, trước Chạy): 3 lượt soát, nhóm thái độ + chiều tốt/xấu, ràng buộc NẾU–THÌ, ô loại trừ, tự luận theo thái độ, độ đồng đều, kết quả soát 200 mẫu thử, xem thử một người — **đã duyệt 2026-11-03** | `pages/LogicReviewPage.tsx`, `components/logic/*` |
 | 12 | `AiQuota.dc.html` | Hộp thoại "Hết lượt AI": chuỗi key đã thử, ô dán key riêng, 3 bước tạo key — **đã duyệt 2026-11-03** | `components/logic/AiQuotaDialog.tsx` |
+| 13 | `Completion.dc.html` | Thông báo kết thúc chiến dịch: thành công / một phần / không gửi được (lý do + cách xử lý), thông báo Windows, nút Gửi lại phản hồi lỗi — **đã duyệt 2026-11-09** | `components/campaign/Completion*.tsx`, `CampaignResultPanel.tsx`, `hooks/useCampaignWatcher.ts` |
 | — | `Sidebar.dc.html` | Thanh điều hướng dùng chung | `components/layout/Sidebar.tsx` |
 | — | `TourPopover.dc.html` | Bong bóng tour (tiêu đề, giải thích, tiến độ, Quay lại / Tiếp / Bỏ qua; 4 hướng đặt) | `components/tour/TourPopover.tsx` |
 

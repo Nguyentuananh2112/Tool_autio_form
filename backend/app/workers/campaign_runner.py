@@ -48,6 +48,7 @@ FAILURE_PAUSE_REASON = (
     "kiểm tra lại form (có câu mới / câu đổi kiểu?) rồi phân tích lại form trước khi bấm Tiếp tục."
 )
 USER_STOP_REASON = "Người dùng đã dừng chiến dịch."
+USER_PAUSE_REASON = "Bạn đã tạm dừng chiến dịch."
 
 
 class CampaignAlreadyRunningError(RuntimeError):
@@ -296,7 +297,9 @@ class CampaignRunner:
 
     async def _set_status(self, status: CampaignStatus, *, reason: str | None = None) -> None:
         async with self.session_factory() as session:
-            await session.execute(update(Campaign).where(Campaign.id == self.campaign_id).values(status=status.value))
+            await session.execute(
+                update(Campaign).where(Campaign.id == self.campaign_id).values(status=status.value, status_reason=reason)
+            )
             await session.commit()
         self.bus.publish(str(self.campaign_id), StatusChangeEvent(
             campaign_id=str(self.campaign_id), status=status.value, reason=reason,

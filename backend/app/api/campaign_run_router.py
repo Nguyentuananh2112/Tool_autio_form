@@ -14,18 +14,25 @@ from app.api.errors import ConflictError
 from sqlalchemy.orm import selectinload
 
 from app.models import Campaign, CampaignStatus, SubmissionLog
-from app.schemas.campaign_api import CampaignRead, SubmissionLogRead, TrialSubmitRequest, TrialSubmitResponse
+from app.schemas.campaign_api import (
+    CampaignRead,
+    CampaignSummary,
+    RetryFailedResponse,
+    SubmissionLogRead,
+    TrialSubmitRequest,
+    TrialSubmitResponse,
+)
 from app.services import campaign_service, export_service
+from app.services.campaign_summary import build_summary
 from app.services.distribution_service import QuestionDistribution, build_distributions
 from app.services.logic_service import stored_logic
 from app.services.spss_generator import SurveyDataGenerator, build_payload_tuples
 from app.workers.campaign_control import registry
-from app.workers.campaign_runner import default_http_factory, start_campaign
+from app.workers.campaign_runner import USER_PAUSE_REASON, default_http_factory, start_campaign
 from app.workers.simulated_submitter import SimulatedSubmitter
 from app.workers.submission_types import payload_to_json
 
 router = APIRouter(prefix="/campaigns", tags=["campaign-run"])
-USER_PAUSE_REASON = "Bạn đã tạm dừng chiến dịch."
 
 
 async def _read(session: DbSession, campaign_id: uuid.UUID) -> CampaignRead:
@@ -40,6 +47,23 @@ async def start(campaign_id: uuid.UUID, session: DbSession, runner_kwargs: Runne
         raise ConflictError("Chiến dịch đã hoàn thành. Hãy tạo chiến dịch mới để gửi thêm.")
     start_campaign(campaign_id, **runner_kwargs)
     return await _read(session, campaign_id)
+
+
+@router.get("/{campaign_id}/summary", response_model=CampaignSummary)
+async def summary(campaign_id: uuid.UUID, session: DbSession) -> CampaignSummary:
+    """Thông báo kết thúc (màn 13): số thành công / lỗi, thời gian, lỗi gom theo lý do kèm cách xử lý."""
+    session.expire_all()
+    campaign = await campaign_service.get_campaign(session, campaign_id)
+    logs = (await session.execute(select(SubmissionLog).where(SubmissionLog.campaign_id == campaign_id))).scalars().all()
+    return build_summary(campaign, logs)
+
+
+@router.post("/{campaign_id}/retry-failed", response_model=RetryFailedResponse, status_code=202)
+async def retry_failed(campaign_id: uuid.UUID, session: DbSession, runner_kwargs: RunnerKwargs) -> RetryFailedResponse:
+    """Gửi lại đúng các phản hồi đã lỗi (nội dung giữ nguyên), không gửi trùng phản hồi đã thành công."""
+    retried = await campaign_service.reset_failed(session, campaign_id)
+    start_campaign(campaign_id, **runner_kwargs)
+    return RetryFailedResponse(retried=retried, campaign=await _read(session, campaign_id))
 
 
 @router.post("/{campaign_id}/pause", response_model=CampaignRead)
