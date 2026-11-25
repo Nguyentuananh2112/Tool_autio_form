@@ -14,13 +14,13 @@ from typing import Any
 from google import genai
 from pydantic import BaseModel, ValidationError
 
-from app.services.gemini_call import GeminiCallError, Sleep, generate_json
+from app.services.gemini_call import PRIMARY_MODEL, GeminiCallError, Sleep, generate_json
 from app.services.gemini_keys import run_with_keys
 from app.services.humanize.ai_cleanup import clean_ai_text
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "gemini-flash-latest"
+DEFAULT_MODEL = PRIMARY_MODEL
 DEFAULT_PERSONA = "người Việt Nam bình thường, đủ độ tuổi và nghề nghiệp, phần lớn trả lời trên điện thoại"
 MAX_PER_REQUEST = 50
 MAX_POOL_SIZE = 500

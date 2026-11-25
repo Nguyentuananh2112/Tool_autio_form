@@ -118,7 +118,7 @@
 - **Cài đặt:** `services/logic/*` (ordering, attitude, checker, repair, plan, ai_reader, text_classifier, review, validation), `services/gemini_keys.py`, `services/gemini_call.py`, `api/logic_router.py`; giao diện `pages/LogicReviewPage.tsx`, `components/logic/*`, `hooks/useLogicReview.ts`.
 - **Lệch so với thiết kế:** lượt 3 SỬA TẠI CHỖ câu mâu thuẫn thay vì bỏ cả phản hồi (bỏ cả phản hồi làm lệch tỷ lệ — checks.md). Dữ liệu Excel là dữ liệu thật nên không bắt buộc soát.
 - **Key:** `GEMINI_SHARED_KEY` đã lưu vào GitHub Secrets (2026-11-03); `GEMINI_BACKUP_KEY` chưa có (tuỳ chọn).
-- **AI:** mặc định `gemini-flash-latest`; quá tải (503) hoặc quá 45 giây → chuyển ngay `gemini-flash-lite-latest` (đo thật: Flash quá tải trả 503 sau 10–100 giây, Lite trả lời ~8 giây với chất lượng đủ dùng).
+- **AI:** ~~mặc định `gemini-flash-latest`; quá tải (503) hoặc quá 45 giây → chuyển ngay `gemini-flash-lite-latest`~~ (đo thật: Flash quá tải trả 503 sau 10–100 giây, Lite trả lời ~8 giây với chất lượng đủ dùng). **Từ 2026-11-25:** model chính `gemini-3.5-flash-lite`, kế tiếp `gemini-3.5-flash`, các model cũ làm dự phòng — xem RISK-013.
 
 ### [SPEC-021] Thông báo kết thúc chiến dịch + Gửi lại phản hồi lỗi — 2026-11-09 — ĐÃ LÀM (màn 13 đã duyệt)
 - **Yêu cầu người dùng:** gửi xong thì báo hoàn tất; gửi không thành công thì báo và nói rõ lý do; có nút gửi lại đúng các phản hồi lỗi, giữ nguyên nội dung.

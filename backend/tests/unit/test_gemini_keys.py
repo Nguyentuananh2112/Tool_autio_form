@@ -9,7 +9,7 @@ from google.genai import errors
 
 from app.core import build_secrets
 from app.services import gemini_keys
-from app.services.gemini_call import FALLBACK_MODELS, GeminiCallError, generate_json
+from app.services.gemini_call import MODEL_CHAIN, GeminiCallError, generate_json
 from app.services.gemini_keys import (
     AiKeysUnavailableError,
     AiUnreachableError,
@@ -169,11 +169,64 @@ async def test_truc_trac_ngan_500_thu_lai_cung_model() -> None:
     assert models.models == ["m", "m"]
 
 
+def test_model_chinh_la_3_5_flash_lite_va_cau_hinh_mac_dinh_khop() -> None:
+    """RISK-013 (2026-11-25): 3.5-flash-lite là model chính, 3.5-flash kế tiếp, các model cũ làm dự phòng."""
+    from app.core.config import Settings
+    from app.services.gemini_call import PRIMARY_MODEL
+    from app.services.gemini_service import DEFAULT_MODEL
+
+    assert MODEL_CHAIN[:2] == ("gemini-3.5-flash-lite", "gemini-3.5-flash")
+    assert {"gemini-flash-latest", "gemini-flash-lite-latest"} <= set(MODEL_CHAIN[2:])
+    assert Settings.model_fields["GEMINI_MODEL"].default == PRIMARY_MODEL == DEFAULT_MODEL
+
+
+async def test_model_cau_hinh_cu_van_di_qua_model_chinh_khi_qua_tai() -> None:
+    """Máy còn GEMINI_MODEL=gemini-flash-latest (bản cũ / .env) → 503 thì chuyển sang 3.5-flash-lite trước."""
+    client, models = _client([_api_error(503), "ok"])
+    assert await generate_json(client, "gemini-flash-latest", "p", dict, temperature=0, sleep=_no_sleep) == "ok"
+    assert models.models == ["gemini-flash-latest", "gemini-3.5-flash-lite"]
+
+
+async def test_model_cham_3_5_flash_duoc_cho_lau_hon_gioi_han_chung() -> None:
+    """Đo thật: 3.5-flash đọc form 53 câu mất 48 giây — không được cắt ở giới hạn chung."""
+    import asyncio
+
+    calls: list[str] = []
+
+    async def generate_content(*, model: str, contents: str, config: Any) -> Any:
+        calls.append(model)
+        if model == "gemini-3.5-flash-lite":
+            raise _api_error(503)
+        await asyncio.sleep(0.1)  # chậm hơn giới hạn chung 0,05 giây
+        return "ok"
+
+    client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)))
+    result = await generate_json(
+        client, "gemini-3.5-flash-lite", "p", dict, temperature=0, sleep=_no_sleep, timeout=0.05
+    )
+    assert result == "ok" and calls == ["gemini-3.5-flash-lite", "gemini-3.5-flash"]
+
+
+async def test_het_tong_thoi_gian_thi_dung_va_bao_qua_tai() -> None:
+    import asyncio
+
+    calls: list[str] = []
+
+    async def generate_content(*, model: str, contents: str, config: Any) -> Any:
+        calls.append(model)
+        await asyncio.sleep(5)
+
+    client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)))
+    with pytest.raises(GeminiCallError, match="quá tải") as info:
+        await generate_json(client, "m", "p", dict, temperature=0, sleep=_no_sleep, timeout=0.05, budget=0.12)
+    assert info.value.code == 503 and len(calls) < len(MODEL_CHAIN) + 1
+
+
 async def test_qua_tai_503_chuyen_ngay_model_du_phong() -> None:
     """Đo thật: khi Flash quá tải mỗi lần 503 mất 10–100 giây → không thử lại cùng model."""
     client, models = _client([_api_error(503), "ok"])
     assert await generate_json(client, "m", "p", dict, temperature=0, sleep=_no_sleep) == "ok"
-    assert models.models == ["m", FALLBACK_MODELS[0]]
+    assert models.models == ["m", MODEL_CHAIN[0]]
 
 
 async def test_khong_tra_loi_qua_han_chuyen_model_du_phong() -> None:
@@ -189,13 +242,13 @@ async def test_khong_tra_loi_qua_han_chuyen_model_du_phong() -> None:
 
     client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generate_content)))
     assert await generate_json(client, "m", "p", dict, temperature=0, sleep=_no_sleep, timeout=0.05) == "ok"
-    assert calls == ["m", FALLBACK_MODELS[0]]
+    assert calls == ["m", MODEL_CHAIN[0]]
 
 
 async def test_model_ngung_ho_tro_404_chuyen_ngay() -> None:
     client, models = _client([_api_error(404), "ok"])
     assert await generate_json(client, "gemini-2.5-flash", "p", dict, temperature=0, sleep=_no_sleep) == "ok"
-    assert models.models == ["gemini-2.5-flash", FALLBACK_MODELS[0]]
+    assert models.models == ["gemini-2.5-flash", MODEL_CHAIN[0]]
 
 
 async def test_het_luot_chi_thu_lai_mot_lan_roi_bao_ma_429() -> None:
@@ -225,7 +278,7 @@ async def test_moi_model_qua_tai_cho_roi_di_lai_ca_chuoi() -> None:
     async def record_sleep(seconds: float) -> None:
         waits.append(seconds)
 
-    client, models = _client([_api_error(503)] * (1 + len(FALLBACK_MODELS)) + ["ok"])  # cả chuỗi "m" + dự phòng
+    client, models = _client([_api_error(503)] * (1 + len(MODEL_CHAIN)) + ["ok"])  # cả chuỗi "m" + dự phòng
     assert await generate_json(client, "m", "p", dict, temperature=0, sleep=record_sleep) == "ok"
-    assert models.models == ["m", *FALLBACK_MODELS, "m"]
+    assert models.models == ["m", *MODEL_CHAIN, "m"]
     assert waits == [10.0]
