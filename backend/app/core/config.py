@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     # ------------------------------------------------------------------ App
     APP_NAME: str = "Auto-Form"
-    APP_VERSION: str = "0.1.1"
+    APP_VERSION: str = "0.1.2"
     ENVIRONMENT: Literal["development", "production"] = "development"
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
